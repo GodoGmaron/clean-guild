@@ -1,0 +1,2271 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>掃除ギルド台帳</title>
+<script id="early-mode-check">
+// SOJI-APP-MAIN-SCRIPT-V1
+(function(){
+  try{
+    if(localStorage.getItem("soji-view-mode") !== "teacher"){
+      document.documentElement.classList.add("student-mode");
+    }
+  }catch(e){}
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF1EA; --surface:#FFFFFF; --surface-2:#F5F7F1;
+  --ink:#25322B; --ink-soft:#5B6B60;
+  --primary:#1F6F5C; --primary-dark:#164E41;
+  --gold:#C9A227; --silver:#8B96A0; --bronze:#B08968;
+  --line:#D8DED2; --danger:#B23A22;
+  --shadow: 0 2px 0 rgba(37,50,43,0.08);
+  padding-top: env(safe-area-inset-top,0px);
+  padding-bottom: env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1B2420; --surface:#232F29; --surface-2:#1F2A25;
+    --ink:#EAF0EA; --ink-soft:#A9B8AE; --line:#37453D;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1B2420; --surface:#232F29; --surface-2:#1F2A25;
+  --ink:#EAF0EA; --ink-soft:#A9B8AE; --line:#37453D;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px); box-sizing:border-box;}
+*,*::before,*::after{box-sizing:inherit;}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Noto Sans JP",sans-serif; min-height:100%;
+}
+h1,h2,h3,.brand{font-family:"Zen Maru Gothic",sans-serif;}
+header{
+  position:sticky; top:0; z-index:20; background:var(--primary); color:#fff;
+  padding-top:env(safe-area-inset-top,0px);
+}
+.headwrap{max-width:920px;margin:0 auto;padding:12px 16px 8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.brand{font-weight:900;font-size:1.2rem;letter-spacing:.02em;}
+.brand small{display:block;font-family:"Noto Sans JP";font-weight:400;font-size:.66rem;color:#CFE6DC;}
+nav{max-width:920px;margin:0 auto;display:flex;gap:2px;padding:0 10px;overflow-x:auto;}
+nav button{
+  flex:1;min-width:84px;background:transparent;border:none;color:#CFE6DC;
+  padding:10px 6px 12px;font-family:"Noto Sans JP";font-size:.8rem;font-weight:500;
+  border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap;
+}
+nav button.active{color:#fff;border-bottom-color:var(--gold);font-weight:700;}
+nav button.secondary{color:#B9D6C8;font-size:.74rem;margin-left:auto;flex:none;min-width:auto;padding:10px 10px 12px;}
+nav button.secondary.active{color:#fff;}
+.subnav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.subnav button{
+  background:var(--surface);color:var(--ink-soft);border:1px solid var(--line);
+  border-radius:20px;padding:7px 14px;font-size:.8rem;font-weight:700;cursor:pointer;
+}
+.subnav button.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+.rec-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:9px 4px;border-bottom:1px solid var(--line);justify-content:space-between;}
+.rec-row:last-child{border-bottom:none;}
+.setup-hint{font-size:.72rem;color:var(--ink-soft);margin:2px 0 0;line-height:1.4;}
+.assign-table{border-collapse:collapse;width:100%;font-size:.78rem;}
+.assign-table th,.assign-table td{padding:7px 8px;border-top:1px solid var(--line);text-align:center;white-space:nowrap;}
+.assign-table th{color:var(--ink-soft);font-weight:700;background:var(--surface-2);}
+.assign-table td:first-child,.assign-table th:first-child{text-align:left;position:sticky;left:0;background:var(--surface);z-index:1;}
+.assign-table th:first-child{background:var(--surface-2);}
+.btn.gold{background:var(--gold);color:#3a2c00;}
+.btn.gold:hover{filter:brightness(0.95);}
+#student-app{display:none;max-width:640px;margin:0 auto;padding:20px 16px 60px;padding-top:calc(20px + env(safe-area-inset-top,0px));}
+html.student-mode header,html.student-mode main{display:none!important;}
+html.student-mode #student-app{display:block;}
+.student-pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:10px;margin-top:10px;}
+.student-pick-grid button{padding:14px 8px;font-size:.95rem;font-weight:700;}
+main{max-width:920px;margin:0 auto;padding:18px 16px 60px;}
+.panel{display:none;} .panel.active{display:block;}
+.card{
+  background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:16px 18px;margin-bottom:14px;box-shadow:var(--shadow);
+}
+.card h2{margin:0 0 4px;font-size:1.05rem;}
+.card .sub{color:var(--ink-soft);font-size:.82rem;margin:0 0 12px;line-height:1.45;}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+label{font-size:.76rem;color:var(--ink-soft);display:block;margin-bottom:3px;}
+input,select,textarea{
+  font-family:inherit;font-size:.9rem;padding:7px 10px;border:1px solid var(--line);
+  border-radius:7px;background:var(--surface-2);color:var(--ink);
+}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--primary);outline-offset:1px;}
+.btn{
+  background:var(--primary);color:#fff;border:none;border-radius:7px;padding:8px 15px;
+  font-size:.86rem;font-weight:700;cursor:pointer;font-family:"Noto Sans JP";display:inline-flex;align-items:center;justify-content:center;gap:4px;
+}
+.btn:hover{background:var(--primary-dark);}
+.btn.ghost{background:transparent;color:var(--primary);border:1px solid var(--primary);}
+.btn.ghost:hover{background:rgba(31,111,92,0.08);}
+.btn.small{padding:5px 10px;font-size:.76rem;}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid var(--danger);}
+.btn.danger:hover{background:rgba(178,58,34,0.08);}
+.medal{
+  display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;
+  border-radius:50%;font-size:.68rem;font-weight:900;color:#fff;flex:none;
+}
+.medal.初級{background:var(--bronze);} .medal.中級{background:var(--silver);color:#2b2b2b;}
+.medal.上級{background:var(--gold);color:#3a2c00;} .medal.none{background:var(--line);color:var(--ink-soft);}
+.student-row{display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid var(--line);flex-wrap:wrap;}
+.student-row:last-child{border-bottom:none;}
+.sname{font-weight:700;flex:1;min-width:110px;}
+.pts{font-size:.82rem;color:var(--primary);font-weight:700;white-space:nowrap;}
+.detail{background:var(--surface-2);border-radius:8px;padding:12px;margin:6px 0 14px;border:1px solid var(--line);}
+.taskrank-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-top:6px;}
+.taskrank-cell{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--surface);}
+.taskrank-cell .tname{font-size:.82rem;font-weight:700;margin-bottom:4px;}
+.progress{height:6px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:4px;}
+.progress i{display:block;height:100%;background:var(--primary);}
+.quest-bar{
+  background:linear-gradient(135deg, var(--primary-dark), var(--primary));
+  color:#fff; border-radius:10px; padding:12px 16px; margin-bottom:14px;
+  box-shadow:var(--shadow);
+}
+.quest-bar .q-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;}
+.quest-bar .q-title{font-family:"Zen Maru Gothic";font-weight:900;font-size:.98rem;}
+.quest-bar .q-pts{font-size:.82rem;color:#CFE6DC;font-weight:700;}
+.quest-track{height:12px;background:rgba(0,0,0,0.28);border-radius:6px;overflow:hidden;margin-top:7px;}
+.quest-fill{height:100%;background:linear-gradient(90deg, var(--gold), #FFE066);transition:width .4s ease;}
+.badge-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:8px;margin-top:6px;}
+.badge-item{
+  border:1px solid var(--line);border-radius:8px;padding:7px 9px;background:var(--surface);
+  display:flex;align-items:center;gap:8px;font-size:.75rem;
+}
+.badge-item.locked{opacity:0.42;filter:grayscale(1);background:var(--surface-2);}
+.badge-item .b-icon{font-size:1.25rem;flex:none;}
+.badge-item .b-title{font-weight:700;color:var(--ink);display:block;font-size:.76rem;}
+.badge-item .b-desc{font-size:.66rem;color:var(--ink-soft);display:block;line-height:1.25;}
+.mvp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;}
+.tasktype-card{border:1px dashed var(--line);border-radius:8px;padding:12px;margin-bottom:10px;}
+.rankline{display:grid;grid-template-columns:28px 90px 1fr;gap:8px;align-items:center;margin:6px 0;}
+.rankline input{width:100%;}
+.hist-item{font-size:.8rem;padding:6px 0;border-bottom:1px dashed var(--line);color:var(--ink-soft);}
+.hist-item b{color:var(--ink);}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;}
+.stat{background:var(--surface-2);border-radius:8px;padding:12px;text-align:center;}
+.stat .n{font-size:1.45rem;font-weight:900;color:var(--primary);font-family:"Zen Maru Gothic";}
+.stat .l{font-size:.72rem;color:var(--ink-soft);}
+.empty{color:var(--ink-soft);font-size:.84rem;padding:10px 0;}
+.chip{display:inline-block;font-size:.7rem;padding:2px 8px;border-radius:10px;background:var(--surface-2);color:var(--ink-soft);margin-left:4px;}
+.chip.ok{background:#DCEFE6;color:var(--primary-dark);font-weight:700;}
+.toast{
+  position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--primary-dark);
+  color:#fff;padding:10px 18px;border-radius:20px;font-size:.84rem;box-shadow:0 4px 14px rgba(0,0,0,.25);
+  z-index:50;opacity:0;transition:opacity .25s; pointer-events:none; display:flex; align-items:center; gap:8px; white-space:nowrap; max-width:94vw; overflow:hidden; text-overflow:ellipsis;
+}
+.toast.show{opacity:1;}
+fieldset{border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:0 0 10px;}
+legend{font-size:.75rem;color:var(--ink-soft);padding:0 4px;font-weight:700;}
+.check-row{display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;}
+.confetti-piece{
+  position:fixed;top:-12px;width:9px;height:14px;border-radius:2px;z-index:999;pointer-events:none;
+  animation:confettiFall 1.8s ease-out forwards;
+}
+@keyframes confettiFall{
+  0%{transform:translateY(0) rotate(0deg);opacity:1;}
+  100%{transform:translateY(100vh) rotate(540deg);opacity:0;}
+}
+::-webkit-scrollbar{height:6px;width:6px;} ::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px;}
+</style>
+</head>
+<body>
+<script id="app-data" type="application/json">{"autoMasterBadges":true,"badgeDefs":[{"desc":"初めて掃除の記録をつけた","enabled":true,"icon":"🌱","id":"b_first","target":1,"title":"見習いギルド員","type":"totalCount"},{"desc":"累計10回掃除を記録した","enabled":true,"icon":"🧹","id":"b_10","target":10,"title":"熟練の掃除人","type":"totalCount"},{"desc":"累計30回掃除を記録した","enabled":true,"icon":"🛡️","id":"b_30","target":30,"title":"ギルドの柱","type":"totalCount"},{"desc":"私語なしで5回取り組んだ","enabled":true,"icon":"🤫","id":"b_silent5","target":5,"title":"沈黙の仕事人","type":"silentCount"},{"desc":"私語なしで15回取り組んだ","enabled":true,"icon":"🧘","id":"b_silent15","target":15,"title":"静寂の賢者","type":"silentCount"},{"desc":"時間内に10回終わらせた","enabled":true,"icon":"⏱️","id":"b_ontime10","target":10,"title":"時を守る者","type":"ontimeCount"},{"desc":"片付け良好を10回達成した","enabled":true,"icon":"📦","id":"b_clean10","target":10,"title":"片付けの名手","type":"cleanupCount"},{"desc":"累計50ポイント獲得","enabled":true,"icon":"💰","id":"b_pt50","target":50,"title":"ポイントハンター","type":"totalReward"},{"desc":"累計150ポイント獲得","enabled":true,"icon":"👑","id":"b_pt150","target":150,"title":"ギルドの英雄","type":"totalReward"},{"desc":"5回以上記録し評価平均4.5以上","enabled":true,"icon":"✨","id":"b_eval","target":4.5,"title":"丁寧マイスター","type":"avgEval"},{"desc":"いずれかの掃除で中級に到達","enabled":true,"icon":"🥈","id":"b_mid","target":1,"title":"中級昇格","type":"reachMid"},{"desc":"いずれかの掃除で上級に到達","enabled":true,"icon":"🥇","id":"b_high","target":1,"title":"上級マイスター","type":"reachHigh"},{"desc":"すべての掃除場所を経験した","enabled":true,"icon":"🌐","id":"b_all","target":1,"title":"オールラウンダー","type":"allTasks"}],"evalMultipliers":{"good":1,"great":1.2,"needsWork":0.6},"features":{"badges":true,"mvp":true,"quest":true,"ranking":true},"guildQuest":{"reward":"クラスお楽しみ会","target":500,"title":"みんなで目指そう！"},"mvpDays":7,"records":[],"rewardUnit":"がんばりポイント","students":[{"assigned":{"t1":true},"id":"sp9luhi8","name":"佐藤 さくら","party":"1班","taskState":{},"totalReward":0},{"assigned":{"t1":true},"id":"sau4i8hm","name":"鈴木 大輝","party":"1班","taskState":{},"totalReward":0},{"assigned":{"t2":true},"id":"s1prtad4","name":"高橋 陽菜","party":"2班","taskState":{},"totalReward":0},{"assigned":{"t2":true},"id":"smgkfv7e","name":"田中 蓮","party":"2班","taskState":{},"totalReward":0},{"assigned":{"t3":true},"id":"scwccr24","name":"伊藤 美咲","party":"3班","taskState":{},"totalReward":0},{"assigned":{"t4":true},"id":"sxhxc59y","name":"渡辺 颯太","party":"3班","taskState":{},"totalReward":0},{"assigned":{"t4":true},"id":"sm0li9f4","name":"山本 結衣","party":"4班","taskState":{},"totalReward":0},{"assigned":{"t5":true},"id":"slv6shwh","name":"中村 悠人","party":"4班","taskState":{},"totalReward":0},{"assigned":{"t6":true},"id":"shnlxshw","name":"小林 凛","party":"5班","taskState":{},"totalReward":0},{"assigned":{"t6":true},"id":"spm6zimg","name":"加藤 大和","party":"5班","taskState":{},"totalReward":0}],"taskTypes":[{"id":"t1","name":"教室のほうきがけ","ranks":{"上級":{"desc":"クラス全体の仕上げ確認をする","needCount":8,"needEval":4.2,"reward":12},"中級":{"desc":"教室の隅・机の下まで掃く","needCount":5,"needEval":3.5,"reward":8},"初級":{"desc":"教室の床をほうきで掃く","needCount":0,"needEval":0,"reward":5}}},{"id":"t2","name":"雑巾がけ","ranks":{"上級":{"desc":"雑巾の洗浄・整頓まで行う","needCount":8,"needEval":4.2,"reward":12},"中級":{"desc":"廊下まで雑巾がけをする","needCount":5,"needEval":3.5,"reward":8},"初級":{"desc":"床の雑巾がけをする","needCount":0,"needEval":0,"reward":5}}},{"id":"t3","name":"黒板消し","ranks":{"上級":{"desc":"黒板消しクリーナーの管理まで行う","needCount":8,"needEval":4.2,"reward":10},"中級":{"desc":"チョーク粉の掃除まで行う","needCount":5,"needEval":3.5,"reward":7},"初級":{"desc":"黒板をきれいに消す","needCount":0,"needEval":0,"reward":4}}},{"id":"t4","name":"トイレ掃除","ranks":{"上級":{"desc":"備品の補充・最終確認まで行う","needCount":8,"needEval":4.2,"reward":20},"中級":{"desc":"便器・床の掃除をする","needCount":5,"needEval":3.5,"reward":14},"初級":{"desc":"手洗い場をきれいにする","needCount":0,"needEval":0,"reward":8}}},{"id":"t5","name":"花壇の水やり・草取り","ranks":{"上級":{"desc":"花や土の状態を見て世話の計画を立てる","needCount":8,"needEval":4.2,"reward":12},"中級":{"desc":"雑草を抜いて花壇を整える","needCount":5,"needEval":3.5,"reward":8},"初級":{"desc":"花壇に水をやる","needCount":0,"needEval":0,"reward":5}}},{"id":"t6","name":"げた箱・くつ整とん","ranks":{"上級":{"desc":"整とんの仕方をみんなに広める","needCount":8,"needEval":4.2,"reward":9},"中級":{"desc":"クラス全員分のげた箱を整える","needCount":5,"needEval":3.5,"reward":6},"初級":{"desc":"自分の靴をそろえる","needCount":0,"needEval":0,"reward":3}}}],"teacherPin":"0000"}</script>
+
+<header>
+  <div class="headwrap">
+    <div class="brand">🧹 掃除ギルド台帳<small>労働・能力・報酬の記録アプリ(先生専用)</small></div>
+    <div class="row" style="margin-left:auto;gap:6px;align-items:center;">
+      <button id="undo-btn" class="btn ghost small" data-action="undo" style="display:none;color:#fff;border-color:rgba(255,255,255,0.45);padding:5px 10px;font-size:.74rem;">↩️ 元に戻す</button>
+      <button class="btn ghost small" data-action="switch-student-mode" style="color:#CFE6DC;border-color:rgba(255,255,255,0.3);padding:5px 9px;font-size:.72rem;" title="児童用画面をプレビュー">👦 児童画面</button>
+      <div id="sync-status" style="font-size:.68rem;color:#CFE6DC;white-space:nowrap;">☁️ 接続中…</div>
+    </div>
+  </div>
+  <nav id="nav"></nav>
+</header>
+
+<main>
+  <div class="panel" id="panel-record"></div>
+  <div class="panel" id="panel-dashboard"></div>
+  <div class="panel" id="panel-overview"></div>
+  <div class="panel" id="panel-setup">
+    <div class="subnav" id="setup-subnav">
+      <button data-action="setup-subtab" data-sub="students" class="active">👥 名簿・担当</button>
+      <button data-action="setup-subtab" data-sub="tasks">🧹 掃除・ランク</button>
+      <button data-action="setup-subtab" data-sub="badges">🏅 称号・目標</button>
+      <button data-action="setup-subtab" data-sub="system">🔧 システム・保存</button>
+    </div>
+    <div id="setup-sub-students">
+      <div id="setup-students"></div>
+      <div id="setup-assign"></div>
+    </div>
+    <div id="setup-sub-tasks" style="display:none">
+      <div id="setup-tasks"></div>
+    </div>
+    <div id="setup-sub-badges" style="display:none">
+      <div id="setup-badges"></div>
+    </div>
+    <div id="setup-sub-system" style="display:none">
+      <div id="setup-system"></div>
+    </div>
+  </div>
+</main>
+
+<div id="student-app"></div>
+<div class="toast" id="toast"></div>
+
+<div id="confirm-overlay" style="display:none;position:fixed;inset:0;background:rgba(20,30,25,.55);z-index:900;align-items:center;justify-content:center;padding:20px;">
+  <div class="card" style="max-width:360px;width:100%;margin:0;box-shadow:0 8px 30px rgba(0,0,0,.3)">
+    <p id="confirm-message" style="margin:0 0 14px;font-size:.9rem;line-height:1.5"></p>
+    <div class="row" style="justify-content:flex-end;gap:8px">
+      <button class="btn ghost small" data-action="confirm-cancel">キャンセル</button>
+      <button class="btn danger small" data-action="confirm-ok">実行する</button>
+    </div>
+  </div>
+</div>
+<div id="debug-badge" style="display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(20,20,20,.88);color:#fff;font-size:.68rem;line-height:1.4;padding:6px 10px;z-index:999;text-align:center;font-family:monospace;padding-bottom:calc(6px + env(safe-area-inset-bottom,0px))"></div>
+
+<script>
+// SOJI-APP-MAIN-SCRIPT-V1
+const STORAGE_KEY = "soji-guild-data-v1";
+const RANKS = ["初級","中級","上級"];
+const RANK_LABEL = {初級:"銅",中級:"銀",上級:"金"};
+
+function localTodayStr(){
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function defaultBadgeDefs(){
+  return [
+    {id:"b_first", icon:"🌱", title:"見習いギルド員", desc:"初めて掃除の記録をつけた", type:"totalCount", target:1, enabled:true},
+    {id:"b_10", icon:"🧹", title:"熟練の掃除人", desc:"累計10回掃除を記録した", type:"totalCount", target:10, enabled:true},
+    {id:"b_30", icon:"🛡️", title:"ギルドの柱", desc:"累計30回掃除を記録した", type:"totalCount", target:30, enabled:true},
+    {id:"b_silent5", icon:"🤫", title:"沈黙の仕事人", desc:"私語なしで5回取り組んだ", type:"silentCount", target:5, enabled:true},
+    {id:"b_silent15", icon:"🧘", title:"静寂の賢者", desc:"私語なしで15回取り組んだ", type:"silentCount", target:15, enabled:true},
+    {id:"b_ontime10", icon:"⏱️", title:"時を守る者", desc:"時間内に10回終わらせた", type:"ontimeCount", target:10, enabled:true},
+    {id:"b_clean10", icon:"📦", title:"片付けの名手", desc:"片付け良好を10回達成した", type:"cleanupCount", target:10, enabled:true},
+    {id:"b_pt50", icon:"💰", title:"ポイントハンター", desc:"累計50ポイント獲得", type:"totalReward", target:50, enabled:true},
+    {id:"b_pt150", icon:"👑", title:"ギルドの英雄", desc:"累計150ポイント獲得", type:"totalReward", target:150, enabled:true},
+    {id:"b_eval", icon:"✨", title:"丁寧マイスター", desc:"5回以上記録し評価平均4.5以上", type:"avgEval", target:4.5, enabled:true},
+    {id:"b_mid", icon:"🥈", title:"中級昇格", desc:"いずれかの掃除で中級に到達", type:"reachMid", target:1, enabled:true},
+    {id:"b_high", icon:"🥇", title:"上級マイスター", desc:"いずれかの掃除で上級に到達", type:"reachHigh", target:1, enabled:true},
+    {id:"b_all", icon:"🌐", title:"オールラウンダー", desc:"すべての掃除場所を経験した", type:"allTasks", target:1, enabled:true}
+  ];
+}
+
+function defaultData(){
+  return {
+    rewardUnit: "がんばりポイント",
+    evalMultipliers: {great:1.2, good:1.0, needsWork:0.6},
+    teacherPin: "0000",
+    guildQuest: {title:"みんなで目指そう！", target:500, reward:"クラスお楽しみ会"},
+    mvpDays: 7,
+    autoMasterBadges: true,
+    badgeDefs: defaultBadgeDefs(),
+    taskTypes: [
+      {id:"t1", name:"教室のほうきがけ", ranks:{
+        初級:{desc:"教室の床をほうきで掃く",reward:5,needCount:0,needEval:0},
+        中級:{desc:"教室の隅・机の下まで掃く",reward:8,needCount:5,needEval:3.5},
+        上級:{desc:"クラス全体の仕上げ確認をする",reward:12,needCount:8,needEval:4.2}}},
+      {id:"t2", name:"雑巾がけ", ranks:{
+        初級:{desc:"床の雑巾がけをする",reward:5,needCount:0,needEval:0},
+        中級:{desc:"廊下まで雑巾がけをする",reward:8,needCount:5,needEval:3.5},
+        上級:{desc:"雑巾の洗浄・整頓まで行う",reward:12,needCount:8,needEval:4.2}}},
+      {id:"t3", name:"黒板消し", ranks:{
+        初級:{desc:"黒板をきれいに消す",reward:4,needCount:0,needEval:0},
+        中級:{desc:"チョーク粉の掃除まで行う",reward:7,needCount:5,needEval:3.5},
+        上級:{desc:"黒板消しクリーナーの管理まで行う",reward:10,needCount:8,needEval:4.2}}},
+      {id:"t4", name:"トイレ掃除", ranks:{
+        初級:{desc:"手洗い場をきれいにする",reward:8,needCount:0,needEval:0},
+        中級:{desc:"便器・床の掃除をする",reward:14,needCount:5,needEval:3.5},
+        上級:{desc:"備品の補充・最終確認まで行う",reward:20,needCount:8,needEval:4.2}}},
+      {id:"t5", name:"花壇の水やり・草取り", ranks:{
+        初級:{desc:"花壇に水をやる",reward:5,needCount:0,needEval:0},
+        中級:{desc:"雑草を抜いて花壇を整える",reward:8,needCount:5,needEval:3.5},
+        上級:{desc:"花や土の状態を見て世話の計画を立てる",reward:12,needCount:8,needEval:4.2}}},
+      {id:"t6", name:"げた箱・くつ整とん", ranks:{
+        初級:{desc:"自分の靴をそろえる",reward:3,needCount:0,needEval:0},
+        中級:{desc:"クラス全員分のげた箱を整える",reward:6,needCount:5,needEval:3.5},
+        上級:{desc:"整とんの仕方をみんなに広める",reward:9,needCount:8,needEval:4.2}}}
+    ],
+    students: [
+      ["佐藤 さくら","t1","1班"],["鈴木 大輝","t1","1班"],["高橋 陽菜","t2","2班"],["田中 蓮","t2","2班"],["伊藤 美咲","t3","3班"],
+      ["渡辺 颯太","t4","3班"],["山本 結衣","t4","4班"],["中村 悠人","t5","4班"],["小林 凛","t6","5班"],["加藤 大和","t6","5班"]
+    ].map(([name,taskId,party])=>({id:"s"+Math.random().toString(36).slice(2,9), name, party, totalReward:0, taskState:{}, assigned:{[taskId]:true}})),
+    records: []
+  };
+}
+
+let data = null;
+
+function buildPristineTemplate(){
+  const raw = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+  try{
+    const doc = new DOMParser().parseFromString(raw, "text/html");
+    doc.querySelectorAll("script").forEach(s=>{
+      const isAppData = s.id === "app-data";
+      const isMainScript = s.textContent.indexOf("SOJI-APP-MAIN-SCRIPT-V1") !== -1;
+      if(!isAppData && !isMainScript) s.remove();
+    });
+    return "<!DOCTYPE html>\n" + doc.documentElement.outerHTML;
+  }catch(e){
+    return raw;
+  }
+}
+const PRISTINE_HTML = buildPristineTemplate();
+
+function loadEmbeddedData(){
+  try{
+    const el = document.getElementById("app-data");
+    if(!el) return null;
+    const parsed = JSON.parse(el.textContent);
+    if(parsed && Array.isArray(parsed.taskTypes) && Array.isArray(parsed.students)) return parsed;
+  }catch(e){ console.error("embedded data parse failed", e); }
+  return null;
+}
+function loadLocal(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+function saveLocal(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){}
+}
+
+function migrateData(d){
+  if(!d || typeof d !== "object") d = defaultData();
+  if(!d.rewardUnit) d.rewardUnit = "がんばりポイント";
+  if(!d.evalMultipliers) d.evalMultipliers = {great:1.2, good:1.0, needsWork:0.6};
+  if(!d.teacherPin) d.teacherPin = "0000";
+  if(!d.guildQuest) d.guildQuest = {title:"みんなで目指そう！", target:500, reward:"クラスお楽しみ会"};
+  if(!d.mvpDays || d.mvpDays < 1) d.mvpDays = 7;
+  if(typeof d.autoMasterBadges !== "boolean") d.autoMasterBadges = true;
+  if(!d.features || typeof d.features !== "object"){
+    d.features = {quest:true, badges:true, mvp:true, ranking:true};
+  } else {
+    if(typeof d.features.quest !== "boolean") d.features.quest = true;
+    if(typeof d.features.badges !== "boolean") d.features.badges = true;
+    if(typeof d.features.mvp !== "boolean") d.features.mvp = true;
+    if(typeof d.features.ranking !== "boolean") d.features.ranking = true;
+  }
+  if(!Array.isArray(d.badgeDefs) || !d.badgeDefs.length) d.badgeDefs = defaultBadgeDefs();
+  if(!Array.isArray(d.taskTypes)) d.taskTypes = defaultData().taskTypes;
+  if(!Array.isArray(d.students)) d.students = [];
+  if(!Array.isArray(d.records)) d.records = [];
+  d.students.forEach(s=>{
+    if(!s.party) s.party = "未所属";
+    if(!s.taskState) s.taskState = {};
+    if(!s.assigned) s.assigned = {};
+    if(typeof s.totalReward !== "number") s.totalReward = 0;
+  });
+  return d;
+}
+
+data = migrateData(loadLocal() || loadEmbeddedData() || defaultData());
+
+function setSyncStatus(text){
+  const el = document.getElementById("sync-status");
+  if(el) el.textContent = text;
+}
+
+let artifactCap = null;
+let publishing = false, publishQueued = false;
+
+async function initArtifactSync(){
+  setSyncStatus("☁️ 接続中…");
+  try{
+    if(!(window.claude && window.claude.use)){ setSyncStatus("💾 この端末に自動保存"); return; }
+    artifactCap = await window.claude.use("artifact");
+    if(!artifactCap){ setSyncStatus("💾 この端末に自動保存"); return; }
+    setSyncStatus("☁️ 共有リンクで同期 有効");
+  }catch(e){
+    setSyncStatus("💾 この端末に自動保存");
+  }
+}
+
+function buildPublishHtml(){
+  const json = JSON.stringify(data).replace(/<\/script/gi, "<\\/script");
+  return PRISTINE_HTML.replace(
+    /<script id="app-data"[^>]*>[\s\S]*?<\/script>/,
+    `<script id="app-data" type="application/json">${json}<\/script>`
+  );
+}
+
+let publishFailCount = 0;
+async function flushPublish(){
+  if(!artifactCap) return;
+  if(publishing){ publishQueued = true; return; }
+  publishing = true;
+  try{
+    await artifactCap.publish(buildPublishHtml());
+    publishFailCount = 0;
+  }catch(e){
+    const code = e && e.code;
+    if(code === "not_writer" || code === "not_granted" || code === "not_declared"){
+      artifactCap = null;
+      setSyncStatus("💾 この端末のみ(共有書込権限なし)");
+    } else if(code === "too_large"){
+      toast("保存データが大きすぎます。古い記録を整理してください");
+    } else if(code !== "conflict"){
+      publishFailCount++;
+      if(publishFailCount <= 3) publishQueued = true;
+    }
+  }
+  publishing = false;
+  if(publishQueued){ publishQueued = false; flushPublish(); }
+}
+
+const RECORDS_CAP = 3000;
+function pruneRecordsIfNeeded(){
+  if(data.records.length > RECORDS_CAP){
+    data.records = data.records.slice(-RECORDS_CAP);
+  }
+}
+
+let publishDebounceTimer = null;
+let publishDebouncePending = false;
+const UNDO_LIMIT = 15;
+let undoStack = [];
+
+function pushUndo(label){
+  try{
+    const snap = JSON.stringify(data);
+    undoStack.push({label: label || "直前の操作", snapshot: snap});
+    if(undoStack.length > UNDO_LIMIT) undoStack.shift();
+    updateUndoButton();
+  }catch(e){}
+}
+function updateUndoButton(){
+  const btn = document.getElementById("undo-btn");
+  if(!btn) return;
+  if(undoStack.length > 0 && viewMode === "teacher"){
+    const last = undoStack[undoStack.length - 1];
+    btn.style.display = "inline-flex";
+    btn.textContent = `↩️ 戻す(${last.label})`;
+  } else {
+    btn.style.display = "none";
+  }
+}
+function performUndo(){
+  if(!undoStack.length){ toast("これ以上戻せる操作はありません"); return; }
+  const last = undoStack.pop();
+  try{
+    data = migrateData(JSON.parse(last.snapshot));
+    save(true);
+    updateUndoButton();
+    render();
+    toast(`「${last.label}」を取り消して元に戻しました`, false);
+  }catch(e){
+    toast("元に戻す処理に失敗しました");
+  }
+}
+
+function save(skipUndoUI){
+  pruneRecordsIfNeeded();
+  saveLocal();
+  if(!skipUndoUI) updateUndoButton();
+  clearTimeout(publishDebounceTimer);
+  publishDebouncePending = true;
+  publishDebounceTimer = setTimeout(()=>{ publishDebouncePending = false; flushPublish(); }, 1500);
+}
+window.addEventListener("beforeunload", ()=>{
+  if(publishDebouncePending){
+    clearTimeout(publishDebounceTimer);
+    publishDebouncePending = false;
+    flushPublish();
+  }
+});
+
+function uid(p){ return p + Math.random().toString(36).slice(2,9); }
+
+function escapeHtml(str){
+  return String(str == null ? "" : str).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+function toast(msg, showUndoBtn = false){
+  const t = document.getElementById("toast");
+  if(!t) return;
+  if(showUndoBtn && undoStack.length > 0 && viewMode === "teacher"){
+    t.innerHTML = `<span>${escapeHtml(msg)}</span> <button data-action="undo" style="margin-left:8px;background:var(--gold);color:#3a2c00;border:none;border-radius:12px;padding:3px 10px;font-size:.75rem;font-weight:900;cursor:pointer;pointer-events:auto;">↩️ 元に戻す</button>`;
+    t.style.pointerEvents = "auto";
+  } else {
+    t.textContent = msg;
+    t.style.pointerEvents = "none";
+  }
+  t.classList.add("show");
+  clearTimeout(toast._h);
+  toast._h = setTimeout(()=>{ t.classList.remove("show"); t.style.pointerEvents = "none"; }, showUndoBtn ? 4200 : 2400);
+}
+
+function fireConfetti(){
+  const colors = ["#C9A227","#1F6F5C","#E76F51","#2A9D8F","#F4A261"];
+  for(let i=0;i<28;i++){
+    const el = document.createElement("div");
+    el.className = "confetti-piece";
+    el.style.left = Math.random()*100 + "vw";
+    el.style.background = colors[i % colors.length];
+    el.style.animationDelay = (Math.random()*0.35) + "s";
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(), 2200);
+  }
+}
+
+let pendingConfirmCallback = null;
+function showConfirm(message, callback){
+  pendingConfirmCallback = callback;
+  const msgEl = document.getElementById("confirm-message");
+  const overlay = document.getElementById("confirm-overlay");
+  if(msgEl) msgEl.textContent = message;
+  if(overlay) overlay.style.display = "flex";
+}
+function hideConfirm(){
+  const overlay = document.getElementById("confirm-overlay");
+  if(overlay) overlay.style.display = "none";
+  pendingConfirmCallback = null;
+}
+
+async function exportBackup(){
+  const json = JSON.stringify(data, null, 2);
+  try{
+    if(window.claude && window.claude.use){
+      const downloads = await window.claude.use("downloads");
+      if(downloads){
+        await downloads.save({filename:`soji-backup-${localTodayStr()}.json`, data:json});
+        toast("バックアップを保存しました");
+        return;
+      }
+    }
+    const blob = new Blob([json], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `soji-backup-${localTodayStr()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast("バックアップをダウンロードしました");
+  }catch(e){
+    toast("ファイル保存に失敗しました");
+  }
+}
+
+function importBackupFile(file){
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try{
+      const parsed = JSON.parse(reader.result);
+      if(!parsed.taskTypes || !parsed.students) throw new Error("format");
+      showConfirm("現在のデータを、このバックアップファイルの内容で上書きします。よろしいですか？", ()=>{
+        pushUndo("バックアップ読込");
+        data = migrateData(parsed);
+        save(); render();
+        toast("バックアップを読み込みました", true);
+      });
+    }catch(e){ toast("ファイルの形式が正しくありません"); }
+  };
+  reader.readAsText(file);
+}
+
+function resetAll(){
+  showConfirm("本当に全データを削除して、サンプルの状態に戻しますか？", ()=>{
+    pushUndo("全データ初期化");
+    data = defaultData();
+    save(); render();
+    toast("サンプルデータにリセットしました", true);
+  });
+}
+
+function resetRecordsOnly(){
+  showConfirm("すべての記録とポイントを0にリセットします。（生徒名簿や掃除の設定、現在のランクは残ります）よろしいですか？", ()=>{
+    pushUndo("記録リセット");
+    data.records = [];
+    data.students.forEach(s => {
+      s.totalReward = 0;
+      for(const tid in s.taskState){
+        s.taskState[tid].count = 0;
+        s.taskState[tid].evalSum = 0;
+        s.taskState[tid].evalCount = 0;
+        s.taskState[tid].silentCount = 0;
+      }
+    });
+    save(); render();
+    toast("記録とポイントを0にリセットしました", true);
+  });
+}
+
+function clearAllStudents(){
+  if(!data.students.length){ toast("すでに名簿は空です"); return; }
+  showConfirm(`現在登録されている生徒(${data.students.length}人)と記録をすべて消去して、名簿を空にします。よろしいですか？`, ()=>{
+    pushUndo("名簿の全消去");
+    data.students = [];
+    data.records = [];
+    openStudentId = null;
+    save(); render();
+    toast("名簿をすべて空にしました", true);
+  });
+}
+
+function parseBulkLines(rawText){
+  return rawText.split(/\r?\n/).map(line=>{
+    const parts = line.split(/\t|,|、/).map(x=>x.trim()).filter(Boolean);
+    if(!parts.length) return null;
+    return {name: parts[0], party: parts[1] || "未所属"};
+  }).filter(Boolean);
+}
+
+function bulkAddStudents(replaceMode){
+  const ta = document.getElementById("bulk-students");
+  if(!ta) return;
+  const items = parseBulkLines(ta.value);
+  if(!items.length){ toast("生徒の名前を1行に1人ずつ入力してください"); return; }
+  const doInsert = ()=>{
+    pushUndo(replaceMode ? "名簿入れ替え" : "生徒まとめて追加");
+    if(replaceMode){
+      data.students = [];
+      data.records = [];
+      openStudentId = null;
+    }
+    items.forEach(({name, party})=>{
+      data.students.push({id:uid("s"), name, party, totalReward:0, taskState:{}, assigned:{}});
+    });
+    save();
+    ta.value = "";
+    render();
+    toast(replaceMode ? `名簿を入れ替えました(${items.length}人)` : `${items.length}人を追加しました`, true);
+  };
+  if(replaceMode && data.students.length > 0){
+    showConfirm(`現在の名簿(${data.students.length}人)と記録を消去し、入力された${items.length}人の名簿に入れ替えます。よろしいですか？`, doInsert);
+  } else {
+    doInsert();
+  }
+}
+
+function studentTaskState(student, taskId){
+  return (student.taskState && student.taskState[taskId]) || {rank:"初級", count:0, evalSum:0, evalCount:0, silentCount:0};
+}
+function ensureTaskState(student, taskId){
+  if(!student.taskState) student.taskState = {};
+  if(!student.taskState[taskId]) student.taskState[taskId] = {rank:"初級", count:0, evalSum:0, evalCount:0, silentCount:0};
+  return student.taskState[taskId];
+}
+function avgEval(st){ return st.evalCount ? (st.evalSum/st.evalCount) : 0; }
+function nextRank(r){ const i=RANKS.indexOf(r); return i<RANKS.length-1 ? RANKS[i+1] : null; }
+
+function getBadgesForStudent(s){
+  let stateCount = 0, stateSilent = 0, stateEvalSum = 0, stateEvalCount = 0;
+  const expTaskSet = new Set();
+  let midCount = 0, highCount = 0;
+
+  data.taskTypes.forEach(t=>{
+    const st = studentTaskState(s, t.id);
+    stateCount += (st.count || 0);
+    stateSilent += (st.silentCount || 0);
+    stateEvalSum += (st.evalSum || 0);
+    stateEvalCount += (st.evalCount || 0);
+    if((st.count || 0) > 0 || st.rank === "中級" || st.rank === "上級") expTaskSet.add(t.id);
+    if(st.rank === "中級" || st.rank === "上級") midCount += 1;
+    if(st.rank === "上級") highCount += 1;
+  });
+
+  let recCount = 0, recSilent = 0, recEvalSum = 0, recEvalCount = 0, ontimeCount = 0, cleanupCount = 0;
+  data.records.forEach(r=>{
+    if(r.studentId === s.id && !r.isAdjustment && !r.isAbsent){
+      recCount += 1;
+      if(r.silence) recSilent += 1;
+      if(typeof r.eval === "number"){ recEvalSum += r.eval; recEvalCount += 1; }
+      if(r.ontime) ontimeCount += 1;
+      if(r.cleanup) cleanupCount += 1;
+      if(r.taskTypeId && data.taskTypes.some(t=>t.id===r.taskTypeId)) expTaskSet.add(r.taskTypeId);
+    }
+  });
+
+  const totalCount = Math.max(stateCount, recCount);
+  const totalSilent = Math.max(stateSilent, recSilent);
+  const useRecEval = recEvalCount >= stateEvalCount;
+  const totalEvalCount = useRecEval ? recEvalCount : stateEvalCount;
+  const totalEvalSum = useRecEval ? recEvalSum : stateEvalSum;
+  const experiencedTasks = expTaskSet.size;
+  const overallAvg = totalEvalCount >= 5 ? (totalEvalSum / totalEvalCount) : 0;
+  const allTasksCount = data.taskTypes.length;
+  const badges = [];
+
+  (data.badgeDefs || []).forEach(b=>{
+    if(b.enabled === false) return;
+    const target = Number(b.target) || 0;
+    let unlocked = false;
+    switch(b.type){
+      case "totalCount": unlocked = totalCount >= target; break;
+      case "silentCount": unlocked = totalSilent >= target; break;
+      case "ontimeCount": unlocked = ontimeCount >= target; break;
+      case "cleanupCount": unlocked = cleanupCount >= target; break;
+      case "totalReward": unlocked = (s.totalReward || 0) >= target; break;
+      case "avgEval": unlocked = totalEvalCount >= 5 && overallAvg >= target; break;
+      case "reachMid": unlocked = midCount >= Math.max(1, target); break;
+      case "reachHigh": unlocked = highCount >= Math.max(1, target); break;
+      case "experiencedTasks": unlocked = experiencedTasks >= Math.max(1, target); break;
+      case "allTasks": unlocked = allTasksCount > 0 && experiencedTasks >= allTasksCount; break;
+    }
+    badges.push({id:b.id, icon:b.icon||"🏅", title:b.title||"称号", desc:b.desc||"", unlocked});
+  });
+
+  if(data.autoMasterBadges !== false){
+    data.taskTypes.forEach(t=>{
+      const st = studentTaskState(s, t.id);
+      if(st.rank === "上級"){
+        badges.push({id:"master_"+t.id, icon:"🏆", title:`${t.name}極めし者`, desc:`${t.name}で最高ランク到達`, unlocked:true});
+      }
+    });
+  }
+  return badges;
+}
+
+function renderBadgesHtml(s, showLocked = true){
+  if(data.features && data.features.badges === false) return "";
+  const all = getBadgesForStudent(s);
+  const list = showLocked ? all : all.filter(b=>b.unlocked);
+  if(!list.length) return `<div class="empty">まだ獲得した称号はありません。</div>`;
+  return `<div class="badge-grid">${list.map(b=>`
+    <div class="badge-item ${b.unlocked?'':'locked'}">
+      <span class="b-icon">${escapeHtml(b.icon)}</span>
+      <div>
+        <span class="b-title">${escapeHtml(b.title)}</span>
+        <span class="b-desc">${escapeHtml(b.desc)}</span>
+      </div>
+    </div>`).join("")}</div>`;
+}
+
+function renderQuestBar(){
+  if(data.features && data.features.quest === false) return "";
+  const q = data.guildQuest || {title:"みんなで目指そう！", target:500, reward:"クラスお楽しみ会"};
+  const total = data.students.reduce((sum, st)=>sum + (st.totalReward||0), 0);
+  const target = Math.max(1, Number(q.target) || 500);
+  const pct = Math.min(100, Math.round((total / target) * 100));
+  const rewardPart = q.reward ? ` (ごほうび: ${escapeHtml(q.reward)})` : "";
+  return `<div class="quest-bar">
+    <div class="q-head">
+      <div class="q-title">🏰 ギルドクエスト：${escapeHtml(q.title)}${rewardPart}</div>
+      <div class="q-pts">${total} / ${target} ${escapeHtml(data.rewardUnit)} (${pct}%)</div>
+    </div>
+    <div class="quest-track"><div class="quest-fill" style="width:${pct}%"></div></div>
+  </div>`;
+}
+
+function getWeeklyStats(){
+  const days = Math.max(1, Number(data.mvpDays) || 7);
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - (days - 1));
+  const y = cutoffDate.getFullYear();
+  const m = String(cutoffDate.getMonth() + 1).padStart(2, "0");
+  const d = String(cutoffDate.getDate()).padStart(2, "0");
+  const cutoffStr = `${y}-${m}-${d}`;
+
+  const stuMap = {};
+  const partyMap = {};
+  data.records.forEach(r=>{
+    if(r.date >= cutoffStr && r.reward > 0){
+      stuMap[r.studentId] = (stuMap[r.studentId] || 0) + r.reward;
+      const st = data.students.find(x=>x.id===r.studentId);
+      if(st && st.party && st.party !== "未所属"){
+        partyMap[st.party] = (partyMap[st.party] || 0) + r.reward;
+      }
+    }
+  });
+  const topStudents = Object.entries(stuMap)
+    .map(([sid, pts])=>({student: data.students.find(x=>x.id===sid), pts}))
+    .filter(x=>x.student)
+    .sort((a,b)=>b.pts - a.pts);
+  const topParties = Object.entries(partyMap)
+    .map(([party, pts])=>({party, pts}))
+    .sort((a,b)=>b.pts - a.pts);
+  return {days, topStudents, topParties};
+}
+
+const TABS = [
+  {id:"record", label:"✍️ 記録する"},
+  {id:"dashboard", label:"📊 ダッシュボード"},
+  {id:"overview", label:"📋 一覧・個人台帳"},
+  {id:"setup", label:"⚙ 年度設定", secondary:true}
+];
+const nav = document.getElementById("nav");
+TABS.forEach(t=>{
+  const b = document.createElement("button");
+  b.textContent = t.label; b.dataset.tab = t.id;
+  if(t.secondary) b.classList.add("secondary");
+  b.onclick = ()=> showTab(t.id);
+  nav.appendChild(b);
+});
+
+function showTab(id){
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active", b.dataset.tab===id));
+  document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("active", p.id==="panel-"+id));
+  try{ sessionStorage.setItem("soji-active-tab", id); }catch(e){}
+  render();
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+
+let activeSetupSubtab = "students";
+function showSetupSubtab(subId){
+  activeSetupSubtab = subId;
+  document.querySelectorAll("#setup-subnav button").forEach(b=>{
+    b.classList.toggle("active", b.dataset.sub === subId);
+  });
+  ["students","tasks","badges","system"].forEach(k=>{
+    const el = document.getElementById("setup-sub-"+k);
+    if(el) el.style.display = (k === subId) ? "block" : "none";
+  });
+}
+
+let openStudentId = null;
+
+function renderOverview(){
+  const el = document.getElementById("panel-overview");
+  if(!data.students.length){
+    el.innerHTML = `<div class="card"><div class="empty">まだ生徒が登録されていません。「⚙ 年度設定 ＞ 👥 名簿・担当」から生徒を登録してください。</div></div>`;
+    return;
+  }
+  const showBadges = !(data.features && data.features.badges === false);
+  const sorted = [...data.students].sort((a,b)=>(b.totalReward||0)-(a.totalReward||0));
+  const colSpan = (showBadges ? 5 : 4) + data.taskTypes.length;
+
+  el.innerHTML = `
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:4px">
+        <h2 style="margin:0">クラス全体の一覧・個人台帳</h2>
+        ${openStudentId ? `<button class="btn ghost small" data-action="close-student-detail">▲ 開いている台帳を閉じる</button>` : ''}
+      </div>
+      <p class="sub">生徒の行をタップすると、<b>すぐ下に個人台帳（ランク変更${showBadges?'・称号':''}・手動ポイント調整・履歴）</b>が開きます。</p>
+      <div style="overflow-x:auto">
+        <table class="assign-table">
+          <thead><tr>
+            <th>生徒 (タップで開閉)</th><th>班</th><th>累計${escapeHtml(data.rewardUnit)}</th>${showBadges ? `<th>🏅称号</th>` : ''}<th>担当場所</th>
+            ${data.taskTypes.map(t=>`<th>${escapeHtml(t.name)}</th>`).join("")}
+          </tr></thead>
+          <tbody>
+            ${sorted.map(s=>{
+              const assignedNames = data.taskTypes.filter(t=>s.assigned && s.assigned[t.id]).map(t=>t.name).join("・") || "ー";
+              const unlockedBadges = showBadges ? getBadgesForStudent(s).filter(b=>b.unlocked) : [];
+              const badgeIcons = unlockedBadges.slice(0,4).map(b=>b.icon).join("") + (unlockedBadges.length>4 ? `+${unlockedBadges.length-4}` : "");
+              const isSelected = openStudentId === s.id;
+              const mainRow = `<tr data-action="toggle-overview-student" data-sid="${s.id}" style="cursor:pointer;${isSelected?'background:var(--surface-2);':''}">
+                <td style="font-weight:700;color:var(--primary);text-decoration:underline">${isSelected?'▼':'▶'} ${escapeHtml(s.name)}</td>
+                <td style="color:var(--ink-soft)">${escapeHtml(s.party||'未所属')}</td>
+                <td style="font-weight:700">${s.totalReward||0}</td>
+                ${showBadges ? `<td title="${escapeHtml(unlockedBadges.map(b=>b.title).join(' / '))}">${badgeIcons || "ー"}</td>` : ''}
+                <td>${escapeHtml(assignedNames)}</td>
+                ${data.taskTypes.map(t=>{
+                  const st = studentTaskState(s, t.id);
+                  return `<td><span class="medal ${st.rank}" style="width:20px;height:20px;font-size:.55rem" title="${st.rank}">${RANK_LABEL[st.rank]}</span></td>`;
+                }).join("")}
+              </tr>`;
+              const detailRow = isSelected ? `<tr><td colspan="${colSpan}" style="text-align:left;white-space:normal;padding:12px;background:var(--surface-2);border-bottom:2px solid var(--primary);">
+                ${studentDetailHtml(s)}
+              </td></tr>` : "";
+              return mainRow + detailRow;
+            }).join("")}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function renderDashboard(){
+  const el = document.getElementById("panel-dashboard");
+  const totalReward = data.students.reduce((s,st)=>s+(st.totalReward||0),0);
+  const ranked = [...data.students].sort((a,b)=>(b.totalReward||0)-(a.totalReward||0)).slice(0,5);
+  const recent = [...data.records].filter(r=>!r.isAbsent).slice(-8).reverse();
+  const weekly = getWeeklyStats();
+  const feat = data.features || {quest:true, badges:true, mvp:true, ranking:true};
+
+  const partyTotals = {};
+  data.students.forEach(s=>{
+    const p = s.party || "未所属";
+    if(p !== "未所属") partyTotals[p] = (partyTotals[p] || 0) + (s.totalReward || 0);
+  });
+  const rankedParties = Object.entries(partyTotals).map(([party,pts])=>({party,pts})).sort((a,b)=>b.pts-a.pts);
+
+  el.innerHTML = `
+    ${renderQuestBar()}
+    <div class="card">
+      <h2>クラス全体の様子</h2>
+      <div class="stat-grid">
+        <div class="stat"><div class="n">${data.students.length}</div><div class="l">登録児童数</div></div>
+        <div class="stat"><div class="n">${data.records.length}</div><div class="l">記録件数</div></div>
+        <div class="stat"><div class="n">${totalReward}</div><div class="l">累計 ${escapeHtml(data.rewardUnit)}</div></div>
+        <div class="stat"><div class="n">${data.taskTypes.length}</div><div class="l">掃除の種類</div></div>
+      </div>
+    </div>
+    ${feat.mvp !== false ? `<div class="card">
+      <h2>🔥 直近${weekly.days}日間のギルドMVP</h2>
+      <div class="sub">最近もっとも活躍している個人とパーティー（班）</div>
+      <div class="mvp-grid">
+        <div>
+          <div style="font-size:.8rem;font-weight:700;color:var(--primary);margin-bottom:6px">👤 今週の個人トップ5</div>
+          ${weekly.topStudents.length ? weekly.topStudents.slice(0,5).map((x,i)=>`
+            <div class="student-row">
+              <span style="font-weight:900;width:22px">${i===0?'👑':(i+1)+'.'}</span>
+              <span class="sname">${escapeHtml(x.student.name)} <small style="color:var(--ink-soft)">(${escapeHtml(x.student.party||'未所属')})</small></span>
+              <span class="pts">+${x.pts}</span>
+            </div>`).join("") : `<div class="empty">直近${weekly.days}日間の記録はまだありません</div>`}
+        </div>
+        <div>
+          <div style="font-size:.8rem;font-weight:700;color:var(--primary);margin-bottom:6px">🛡️ 今週の班トップ5</div>
+          ${weekly.topParties.length ? weekly.topParties.slice(0,5).map((x,i)=>`
+            <div class="student-row">
+              <span style="font-weight:900;width:22px">${i===0?'👑':(i+1)+'.'}</span>
+              <span class="sname">${escapeHtml(x.party)}</span>
+              <span class="pts">+${x.pts}</span>
+            </div>`).join("") : `<div class="empty">班の記録はまだありません</div>`}
+        </div>
+      </div>
+    </div>` : ''}
+    ${feat.ranking !== false ? `<div class="mvp-grid">
+      <div class="card">
+        <h2>🏆 累計個人ランキング</h2>
+        ${ranked.length? ranked.map((s,i)=>`
+          <div class="student-row">
+            <span style="font-weight:900;color:var(--ink-soft);width:20px">${i+1}</span>
+            <span class="sname">${escapeHtml(s.name)} <small style="color:var(--ink-soft)">(${escapeHtml(s.student?x.student.party:s.party||'未所属')})</small></span>
+            <span class="pts">${s.totalReward||0} ${escapeHtml(data.rewardUnit)}</span>
+          </div>`).join("") : `<div class="empty">まだ生徒がいません。</div>`}
+      </div>
+      <div class="card">
+        <h2>🚩 累計パーティー(班)ランキング</h2>
+        ${rankedParties.length? rankedParties.map((p,i)=>`
+          <div class="student-row">
+            <span style="font-weight:900;color:var(--ink-soft);width:20px">${i+1}</span>
+            <span class="sname">${escapeHtml(p.party)}</span>
+            <span class="pts">${p.pts} ${escapeHtml(data.rewardUnit)}</span>
+          </div>`).join("") : `<div class="empty">班を設定すると集計されます。</div>`}
+      </div>
+    </div>` : ''}
+    <div class="card">
+      <h2>最近の記録履歴</h2>
+      ${recent.length? recent.map(r=>{
+        const s = data.students.find(x=>x.id===r.studentId);
+        if(r.isAdjustment){
+          return `<div class="hist-item"><b>${escapeHtml(s?s.name:"?")}</b> — 🔧 手動調整 ${r.date} / ${r.reward>=0?'+':''}${r.reward}${escapeHtml(data.rewardUnit)}${r.note?' ('+escapeHtml(r.note)+')':''}</div>`;
+        }
+        const t = data.taskTypes.find(x=>x.id===r.taskTypeId);
+        return `<div class="hist-item"><b>${escapeHtml(s?s.name:"?")}</b> — ${escapeHtml(t?t.name:"?")}
+          <span class="medal ${r.rank}" style="width:18px;height:18px;font-size:.55rem;vertical-align:middle">${RANK_LABEL[r.rank]||''}</span>
+          ${r.date} / +${r.reward}${escapeHtml(data.rewardUnit)}</div>`;
+      }).join("") : `<div class="empty">記録するとここに表示されます。</div>`}
+    </div>`;
+}
+
+function studentDetailHtml(s){
+  const showBadges = !(data.features && data.features.badges === false);
+  const grid = data.taskTypes.map(t=>{
+    const st = studentTaskState(s, t.id);
+    const nr = nextRank(st.rank);
+    const cur = t.ranks[st.rank] || t.ranks["初級"];
+    let progressHtml = "";
+    if(nr){
+      const need = t.ranks[nr];
+      const cReady = st.count >= need.needCount;
+      const eReady = avgEval(st) >= need.needEval;
+      const pct = Math.min(100, Math.round(((st.count/Math.max(1,need.needCount))*50) + ((avgEval(st)/Math.max(0.1,need.needEval))*50)));
+      progressHtml = `<div class="progress"><i style="width:${Math.min(100,pct)}%"></i></div>
+        <div style="font-size:.68rem;color:var(--ink-soft);margin-top:2px">${nr}まで: 回数${st.count}/${need.needCount} ・ 評価平均${avgEval(st).toFixed(1)}/${need.needEval}
+        ${(cReady&&eReady)? '<span class="chip ok">昇格目安達成</span>' : ''}</div>`;
+    } else {
+      progressHtml = `<div style="font-size:.68rem;color:var(--gold);font-weight:700;margin-top:2px">👑 最高ランク</div>`;
+    }
+    return `<div class="taskrank-cell">
+        <div class="tname">${escapeHtml(t.name)}</div>
+        <div class="row" style="gap:6px;margin-bottom:4px">
+          <span class="medal ${st.rank}">${RANK_LABEL[st.rank]}</span>
+          <select style="font-size:.75rem;padding:4px 6px" data-action="set-rank" data-sid="${s.id}" data-tid="${t.id}">
+            ${RANKS.map(r=>`<option value="${r}" ${r===st.rank?'selected':''}>${r}(${RANK_LABEL[r]})</option>`).join("")}
+          </select>
+        </div>
+        <span style="font-size:.72rem;color:var(--ink-soft)">${escapeHtml(cur.desc)}</span>
+        ${progressHtml}
+      </div>`;
+  }).join("");
+
+  const hist = [...data.records].filter(r=>r.studentId===s.id && !r.isAbsent).slice(-8).reverse().map(r=>{
+    if(r.isAdjustment){
+      return `<div class="hist-item">${r.date} — 🔧 手動調整 ${r.reward>=0?'+':''}${r.reward}${escapeHtml(data.rewardUnit)}${r.note?'('+escapeHtml(r.note)+')':''}</div>`;
+    }
+    const t = data.taskTypes.find(x=>x.id===r.taskTypeId);
+    return `<div class="hist-item">${r.date} — ${escapeHtml(t?t.name:"?")}(${r.rank}) 評価${r.eval} ${r.silence?'・私語なし':''}${r.ontime?'・時間内':''}${r.cleanup?'・片付け良好':''} → +${r.reward}${escapeHtml(data.rewardUnit)}</div>`;
+  }).join("") || `<div class="empty">記録はまだありません。</div>`;
+
+  return `
+    <div class="row" style="justify-content:space-between">
+      <div style="font-weight:900;font-size:.95rem">${escapeHtml(s.name)} さんの個人台帳 — 累計 ${s.totalReward||0}${escapeHtml(data.rewardUnit)}</div>
+      <div class="row" style="gap:6px">
+        <button class="btn ghost small" data-action="close-student-detail">▲ 閉じる</button>
+        <button class="btn danger small" data-action="remove-student" data-sid="${s.id}">名簿から削除</button>
+      </div>
+    </div>
+    <div class="row" style="margin-top:6px; margin-bottom:10px;">
+      <div><label>所属班</label><input type="text" data-action="update-party" data-sid="${s.id}" value="${escapeHtml(s.party||'')}" placeholder="例: 1班" style="width:110px; padding:6px; font-size:0.8rem;"></div>
+    </div>
+    ${showBadges ? `<h3 style="margin:10px 0 4px;font-size:.9rem">🏅 獲得した称号・実績</h3>${renderBadgesHtml(s, true)}` : ''}
+    <h3 style="margin:14px 0 4px;font-size:.9rem">🧹 各掃除のランク</h3>
+    <div class="taskrank-grid">${grid}</div>
+    <div class="row" style="margin-top:10px;align-items:flex-end">
+      <div><label>ポイント調整(+/-・整数)</label><input type="number" step="1" id="adj-amt-${s.id}" placeholder="例: 5 または -3" style="width:120px"></div>
+      <div><label>理由(任意)</label><input type="text" id="adj-note-${s.id}" placeholder="例: 特別に頑張った" style="width:170px"></div>
+      <button class="btn small ghost" data-action="apply-adjustment" data-sid="${s.id}">反映する</button>
+    </div>
+    <h3 style="margin:14px 0 4px;font-size:.9rem">最近の記録</h3>
+    ${hist}
+    <div style="text-align:right;margin-top:10px">
+      <button class="btn ghost small" data-action="close-student-detail">▲ 台帳を閉じる</button>
+    </div>`;
+}
+
+function renderStudents(){
+  const el = document.getElementById("setup-students");
+  if(!el) return;
+  el.innerHTML = `
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <div>
+          <h2 style="margin:0">👥 生徒名簿の管理 (${data.students.length}人)</h2>
+          <p class="sub" style="margin:2px 0 0">1人ずつ追加、またはスプレッドシートから一括で登録・入れ替えができます。</p>
+        </div>
+        ${data.students.length ? `<button class="btn danger small" data-action="clear-all-students">🗑️ 名簿をすべて空にする</button>` : ''}
+      </div>
+      <div class="row" style="margin-top:10px;align-items:flex-end">
+        <div><label>名前</label><input id="new-student-name" placeholder="例: 山田 太郎" style="width:160px"></div>
+        <div><label>所属班(任意)</label><input id="new-student-party" placeholder="例: 1班" style="width:100px"></div>
+        <button class="btn" data-action="add-student">＋ 1人追加</button>
+      </div>
+      <hr style="border:none;border-top:1px dashed var(--line);margin:14px 0">
+      <label style="font-weight:700;color:var(--ink)">📋 まとめて一括登録・入れ替え (1行に1人 / 「名前, 1班」のようにカンマやタブ区切りで班も同時登録可)</label>
+      <textarea id="bulk-students" rows="4" style="width:100%;margin-top:4px" placeholder="山田 太郎, 1班&#10;佐藤 花子, 1班&#10;鈴木 一郎, 2班"></textarea>
+      <div class="row" style="margin-top:8px">
+        <button class="btn" data-action="bulk-add">＋ 今の名簿に追加する</button>
+        <button class="btn gold" data-action="bulk-replace">🔄 今の名簿を消して、この内容で入れ替える</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>登録生徒の直接編集</h2>
+      <p class="sub">その場で名前や班を書き換えられます。詳細を見たい場合は「台帳」ボタンを押してください。</p>
+      <div>
+        ${data.students.length ? data.students.map(s=>`
+          <div class="student-row">
+            <input type="text" value="${escapeHtml(s.name)}" data-action="rename-student" data-sid="${s.id}" style="font-weight:700;width:150px;padding:5px 8px">
+            <input type="text" value="${escapeHtml(s.party||'')}" placeholder="班(例:1班)" data-action="update-party" data-sid="${s.id}" style="width:95px;padding:5px 8px;font-size:.82rem">
+            <span class="pts" style="margin-left:auto">${s.totalReward||0} ${escapeHtml(data.rewardUnit)}</span>
+            <button class="btn ghost small" data-action="open-student-detail-setup" data-sid="${s.id}">${openStudentId===s.id?'▲ 閉じる':'📋 台帳'}</button>
+            <button class="btn danger small" data-action="remove-student" data-sid="${s.id}">削除</button>
+          </div>
+          ${openStudentId===s.id ? `<div class="detail">${studentDetailHtml(s)}</div>` : ''}
+        `).join("") : `<div class="empty">まだ生徒が登録されていません。上の入力欄から追加してください。</div>`}
+      </div>
+    </div>`;
+}
+
+function setStudentRank(studentId, taskId, newRank){
+  const s = data.students.find(x=>x.id===studentId);
+  if(!s) return;
+  const st = ensureTaskState(s, taskId);
+  if(st.rank===newRank) return;
+  pushUndo(`${s.name}のランク変更`);
+  st.rank = newRank; st.count=0; st.evalSum=0; st.evalCount=0; st.silentCount=0;
+  save(); toast(`${s.name}さんのランクを${newRank}に変更しました`, true); render();
+}
+
+function applyAdjustment(studentId){
+  const amtInput = document.getElementById(`adj-amt-${studentId}`);
+  const noteInput = document.getElementById(`adj-note-${studentId}`);
+  if(!amtInput) return;
+  const amount = Math.round(parseFloat(amtInput.value));
+  if(!amount){ toast("増減させる数値(整数)を入力してください"); return; }
+  const s = data.students.find(x=>x.id===studentId);
+  if(!s) return;
+  pushUndo(`${s.name}のポイント調整`);
+  s.totalReward = (s.totalReward||0) + amount;
+  data.records.push({id:uid("r"), date:localTodayStr(), studentId, isAdjustment:true, reward:amount, note:noteInput ? noteInput.value.trim() : ""});
+  save(); toast(`${amount>0?'+':''}${amount}${data.rewardUnit} 反映しました`, true);
+  render();
+}
+
+function addStudent(){
+  const inp = document.getElementById("new-student-name");
+  const pinp = document.getElementById("new-student-party");
+  if(!inp) return;
+  const name = inp.value.trim();
+  const party = (pinp && pinp.value.trim()) || "未所属";
+  if(!name){ toast("名前を入力してください"); return; }
+  pushUndo(`${name}の追加`);
+  data.students.push({id:uid("s"), name, party, totalReward:0, taskState:{}, assigned:{}});
+  save(); inp.value=""; if(pinp) pinp.value=""; render();
+  toast(`${name}さんを追加しました`, true);
+}
+
+function removeStudent(id){
+  const s = data.students.find(x=>x.id===id);
+  showConfirm(`${s?s.name:"この生徒"}のデータを削除しますか？`, ()=>{
+    pushUndo(`${s?s.name:"生徒"}の削除`);
+    data.students = data.students.filter(st=>st.id!==id);
+    data.records = data.records.filter(r=>r.studentId!==id);
+    if(openStudentId===id) openStudentId=null;
+    save(); render();
+    toast("削除しました", true);
+  });
+}
+
+function promote(studentId, taskId){
+  const s = data.students.find(x=>x.id===studentId);
+  if(!s) return;
+  const st = ensureTaskState(s, taskId);
+  const nr = nextRank(st.rank);
+  if(!nr) return;
+  pushUndo(`${s.name}の昇格`);
+  st.rank = nr; st.count=0; st.evalSum=0; st.evalCount=0;
+  save(); toast(`${s.name}さんが${nr}に昇格しました！`, true);
+  fireConfetti();
+  render();
+}
+
+function ensureAssigned(student){ if(!student.assigned) student.assigned={}; return student.assigned; }
+function toggleAssign(studentId, taskId, checked){
+  const s = data.students.find(x=>x.id===studentId);
+  if(!s) return;
+  ensureAssigned(s)[taskId] = checked;
+  save();
+  renderRecord();
+  renderOverview();
+}
+
+function rotateAssignments(direction){
+  const tIds = data.taskTypes.map(t=>t.id);
+  if(tIds.length < 2){
+    toast("掃除の種類が2つ以上あるときにローテーションできます");
+    return;
+  }
+  const hasAny = data.students.some(s=>s.assigned && Object.values(s.assigned).some(Boolean));
+  if(!hasAny){
+    toast("現在チェックされている担当がないため、ローテーションできません");
+    return;
+  }
+  pushUndo("当番ローテーション");
+  data.students.forEach(s=>{
+    const cur = s.assigned || {};
+    const next = {};
+    tIds.forEach((tid, idx)=>{
+      if(cur[tid]){
+        const newIdx = (idx + direction + tIds.length) % tIds.length;
+        next[tIds[newIdx]] = true;
+      }
+    });
+    s.assigned = next;
+  });
+  save();
+  renderAssignments();
+  renderRecord();
+  renderOverview();
+  toast(direction > 0 ? "🔄 全員の担当場所を1つ右(次)へずらしました！" : "🔄 全員の担当場所を1つ左(前)へ戻しました！", true);
+}
+
+function assignByPartyOrder(){
+  const tIds = data.taskTypes.map(t=>t.id);
+  if(!tIds.length) return;
+  const parties = [];
+  data.students.forEach(s=>{
+    const p = s.party || "未所属";
+    if(p !== "未所属" && !parties.includes(p)) parties.push(p);
+  });
+  if(!parties.length){
+    toast("先に生徒に「1班」「2班」などの班を設定してください");
+    return;
+  }
+  pushUndo("班順の自動割当");
+  parties.sort((a,b)=>a.localeCompare(b, "ja", {numeric:true}));
+  data.students.forEach(s=>{
+    const p = s.party || "未所属";
+    const pIdx = parties.indexOf(p);
+    if(pIdx !== -1){
+      const tid = tIds[pIdx % tIds.length];
+      s.assigned = {[tid]: true};
+    }
+  });
+  save();
+  renderAssignments();
+  renderRecord();
+  renderOverview();
+  toast("✨ 班ごとに順番で掃除場所を割り振りました！", true);
+}
+
+function renderAssignments(){
+  const el = document.getElementById("setup-assign");
+  if(!el) return;
+  if(!data.students.length || !data.taskTypes.length){
+    el.innerHTML = `<div class="card"><h2>担当編成</h2><div class="empty">生徒と掃除の種類を登録すると、ここで担当を割り振れます。</div></div>`;
+    return;
+  }
+  el.innerHTML = `
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+        <h2 style="margin:0">🔄 掃除当番の編成・ローテーション</h2>
+        <div class="row" style="gap:6px">
+          <button class="btn ghost small" data-action="rotate-assign" data-dir="-1">◀ 1つ前へ戻す</button>
+          <button class="btn gold small" data-action="rotate-assign" data-dir="1">🔄 当番を1つ次へずらす ▶</button>
+          <button class="btn ghost small" data-action="assign-by-party">✨ 班順に自動割当</button>
+        </div>
+      </div>
+      <p class="sub">チェックした内容がそのまま「記録する」画面の対象者になります。週替わり・月替わりの際は上のボタンで1タップでずらせます。</p>
+      <div style="overflow-x:auto">
+        <table class="assign-table">
+          <thead><tr><th>生徒</th><th>班</th>${data.taskTypes.map(t=>`<th>${escapeHtml(t.name)}</th>`).join("")}</tr></thead>
+          <tbody>
+            ${data.students.map(s=>`<tr>
+              <td style="font-weight:700">${escapeHtml(s.name)}</td>
+              <td style="color:var(--ink-soft)">${escapeHtml(s.party||'未所属')}</td>
+              ${data.taskTypes.map(t=>`<td><input type="checkbox" ${(s.assigned&&s.assigned[t.id])?'checked':''}
+                data-action="toggle-assign" data-sid="${s.id}" data-tid="${t.id}"></td>`).join("")}
+            </tr>`).join("")}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function renderSettings(){
+  const el = document.getElementById("setup-tasks");
+  if(!el) return;
+  el.innerHTML = `
+    <div class="card">
+      <h2>評価ごとの点数倍率と全種類一括調整</h2>
+      <div class="sub">各ランクの基本報酬に、評価に応じてこの倍率をかけます。</div>
+      <div class="row" style="margin-bottom:12px">
+        <div><label>◎よくできた(倍率)</label><input type="number" step="0.1" min="0" value="${data.evalMultipliers.great}" data-action="update-mult" data-tier="great" style="width:110px"></div>
+        <div><label>○できた(倍率)</label><input type="number" step="0.1" min="0" value="${data.evalMultipliers.good}" data-action="update-mult" data-tier="good" style="width:110px"></div>
+        <div><label>△もう少し(倍率)</label><input type="number" step="0.1" min="0" value="${data.evalMultipliers.needsWork}" data-action="update-mult" data-tier="needsWork" style="width:110px"></div>
+      </div>
+      <hr style="border:none;border-top:1px dashed var(--line);margin:12px 0">
+      <label style="font-weight:700;color:var(--ink)">⚡ 全種類の昇格ハードルを一括変更</label>
+      <div class="row" style="margin-top:6px;align-items:flex-end">
+        <div><label>中級への必要回数</label><input type="number" id="bulk-mid-cnt" value="5" min="1" style="width:90px"></div>
+        <div><label>中級への評価平均</label><input type="number" id="bulk-mid-eval" value="3.5" step="0.1" min="1" max="5" style="width:90px"></div>
+        <div><label>上級への必要回数</label><input type="number" id="bulk-high-cnt" value="8" min="1" style="width:90px"></div>
+        <div><label>上級への評価平均</label><input type="number" id="bulk-high-eval" value="4.2" step="0.1" min="1" max="5" style="width:90px"></div>
+        <button class="btn ghost small" data-action="apply-bulk-thresholds">全種類に一括反映</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>🧹 掃除の種類とランク設定</h2>
+      <div class="sub">ランクが上がるほど、任される仕事内容・報酬・昇格条件を自由に設定できます。</div>
+      <div id="task-list"></div>
+      <div class="row" style="margin-top:10px">
+        <input id="new-task-name" placeholder="新しい掃除の種類名(例: 図書室掃除)" style="width:240px">
+        <button class="btn" data-action="add-task">＋ 種類を追加</button>
+      </div>
+    </div>`;
+  const list = document.getElementById("task-list");
+  data.taskTypes.forEach(t=>{
+    const card = document.createElement("div");
+    card.className = "tasktype-card";
+    card.innerHTML = `
+      <div class="row" style="justify-content:space-between;margin-bottom:6px">
+        <input value="${escapeHtml(t.name)}" data-action="rename-task" data-tid="${t.id}" style="font-weight:700;width:220px">
+        <button class="btn danger small" data-action="remove-task" data-tid="${t.id}">この種類を削除</button>
+      </div>
+      ${RANKS.map(r=>{
+        const rk = t.ranks[r];
+        return `<fieldset><legend>${r}(${RANK_LABEL[r]})</legend>
+          <div class="rankline">
+            <span class="medal ${r}">${RANK_LABEL[r]}</span>
+            <div><label>基本報酬</label><input type="number" step="1" min="0" value="${rk.reward}" data-action="update-rank" data-tid="${t.id}" data-rank="${r}" data-field="reward"></div>
+            <div><label>めあて・仕事内容</label><input value="${escapeHtml(rk.desc)}" data-action="update-rank" data-tid="${t.id}" data-rank="${r}" data-field="desc"></div>
+          </div>
+          ${r!=="初級"?`<div class="row">
+            <div><label>昇格に必要な回数</label><input type="number" step="1" min="0" value="${rk.needCount}" data-action="update-rank" data-tid="${t.id}" data-rank="${r}" data-field="needCount" style="width:110px"></div>
+            <div><label>昇格に必要な評価平均(1〜5)</label><input type="number" step="0.1" min="1" max="5" value="${rk.needEval}" data-action="update-rank" data-tid="${t.id}" data-rank="${r}" data-field="needEval" style="width:110px"></div>
+          </div>`:""}
+        </fieldset>`;
+      }).join("")}`;
+    list.appendChild(card);
+  });
+}
+
+const BADGE_TYPE_OPTIONS = [
+  {value:"totalCount", label:"累計掃除回数 (回以上)"},
+  {value:"silentCount", label:"私語なし回数 (回以上)"},
+  {value:"ontimeCount", label:"時間内完了回数 (回以上)"},
+  {value:"cleanupCount", label:"片付け良好回数 (回以上)"},
+  {value:"totalReward", label:"累計獲得ポイント (pt以上)"},
+  {value:"avgEval", label:"全体評価平均 (5回以上記録で平均〜以上)"},
+  {value:"reachMid", label:"中級以上に到達した掃除数 (種類以上)"},
+  {value:"reachHigh", label:"上級に到達した掃除数 (種類以上)"},
+  {value:"experiencedTasks", label:"経験した掃除場所の数 (種類以上)"},
+  {value:"allTasks", label:"すべての掃除場所を経験 (目標値は1固定)"}
+];
+
+function renderBadgesSetup(){
+  const el = document.getElementById("setup-badges");
+  if(!el) return;
+  const q = data.guildQuest || {title:"みんなで目指そう！", target:500, reward:"クラスお楽しみ会"};
+  const feat = data.features || {quest:true, badges:true, mvp:true, ranking:true};
+  el.innerHTML = `
+    <div class="card">
+      <h2>🎛️ 演出・機能のON/OFF切り替え</h2>
+      <p class="sub">学級の実態や時期に合わせて、画面に表示する機能をいつでも切り替えられます。OFFにしてもこれまでの記録データは消えません。</p>
+      <div class="row" style="gap:14px;flex-wrap:wrap">
+        <label class="check-row" style="background:var(--surface-2);padding:8px 12px;border-radius:8px;border:1px solid var(--line)">
+          <input type="checkbox" ${feat.quest!==false?'checked':''} data-action="toggle-feature" data-feat="quest">
+          <b>🏰 クラス全体目標（お楽しみ会等）を表示</b>
+        </label>
+        <label class="check-row" style="background:var(--surface-2);padding:8px 12px;border-radius:8px;border:1px solid var(--line)">
+          <input type="checkbox" ${feat.badges!==false?'checked':''} data-action="toggle-feature" data-feat="badges">
+          <b>🏅 称号（バッジ）機能を表示</b>
+        </label>
+        <label class="check-row" style="background:var(--surface-2);padding:8px 12px;border-radius:8px;border:1px solid var(--line)">
+          <input type="checkbox" ${feat.mvp!==false?'checked':''} data-action="toggle-feature" data-feat="mvp">
+          <b>🔥 週間ギルドMVPを表示</b>
+        </label>
+        <label class="check-row" style="background:var(--surface-2);padding:8px 12px;border-radius:8px;border:1px solid var(--line)">
+          <input type="checkbox" ${feat.ranking!==false?'checked':''} data-action="toggle-feature" data-feat="ranking">
+          <b>🏆 累計ランキングを表示</b>
+        </label>
+      </div>
+    </div>
+    <div class="card" style="${feat.quest===false?'opacity:0.55':''}">
+      <h2>🏰 ギルドクエスト（クラス全体目標）と数値設定 ${feat.quest===false?'<span class="chip">現在OFF</span>':''}</h2>
+      <div class="sub">ごほうび欄を空欄にすると、ごほうび表記なしで純粋な目標ゲージとして使えます。</div>
+      <div class="row" style="align-items:flex-end">
+        <div><label>クエスト名</label><input type="text" value="${escapeHtml(q.title)}" data-action="update-quest" data-field="title" style="width:190px"></div>
+        <div><label>目標${escapeHtml(data.rewardUnit)}数</label><input type="number" step="10" min="10" value="${q.target}" data-action="update-quest" data-field="target" style="width:110px"></div>
+        <div><label>達成のごほうび(空欄可)</label><input type="text" value="${escapeHtml(q.reward)}" placeholder="例: クラスお楽しみ会" data-action="update-quest" data-field="reward" style="width:180px"></div>
+      </div>
+      <div class="row" style="margin-top:12px;align-items:flex-end">
+        <div><label>報酬の単位名</label><input id="reward-unit" value="${escapeHtml(data.rewardUnit)}" style="width:160px"></div>
+        <button class="btn ghost small" data-action="save-unit">単位名を保存</button>
+        <div style="margin-left:12px"><label>週間MVPの集計日数</label><input type="number" min="1" max="365" value="${data.mvpDays||7}" data-action="update-mvp-days" style="width:90px"> 日間</div>
+      </div>
+    </div>
+    <div class="card" style="${feat.badges===false?'opacity:0.55':''}">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <div>
+          <h2 style="margin:0">🏅 称号（バッジ）のカスタマイズ ${feat.badges===false?'<span class="chip">現在OFF</span>':''}</h2>
+          <p class="sub" style="margin:2px 0 0">左端のチェックで個別の称号ごとのON/OFFも切り替えられます。</p>
+        </div>
+        <button class="btn ghost small" data-action="reset-badges-default">初期の称号に戻す</button>
+      </div>
+      <label class="check-row" style="margin:8px 0 12px">
+        <input type="checkbox" ${data.autoMasterBadges!==false?'checked':''} data-action="toggle-auto-master">
+        各掃除の「上級」到達時に『〇〇極めし者』バッジを自動付与する
+      </label>
+      <div>
+        ${(data.badgeDefs||[]).map(b=>`
+          <div style="border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:8px;background:var(--surface-2)" class="row">
+            <input type="checkbox" ${b.enabled!==false?'checked':''} data-action="update-badge" data-bid="${b.id}" data-field="enabled" title="有効/無効">
+            <input type="text" value="${escapeHtml(b.icon)}" data-action="update-badge" data-bid="${b.id}" data-field="icon" style="width:46px;text-align:center" title="アイコン">
+            <input type="text" value="${escapeHtml(b.title)}" data-action="update-badge" data-bid="${b.id}" data-field="title" placeholder="称号名" style="width:135px;font-weight:700">
+            <input type="text" value="${escapeHtml(b.desc)}" data-action="update-badge" data-bid="${b.id}" data-field="desc" placeholder="説明文" style="flex:1;min-width:150px">
+            <select data-action="update-badge" data-bid="${b.id}" data-field="type" style="font-size:.78rem">
+              ${BADGE_TYPE_OPTIONS.map(opt=>`<option value="${opt.value}" ${b.type===opt.value?'selected':''}>${escapeHtml(opt.label)}</option>`).join("")}
+            </select>
+            <input type="number" step="0.1" min="0" value="${b.target}" data-action="update-badge" data-bid="${b.id}" data-field="target" style="width:75px" title="目標数値">
+            <button class="btn danger small" data-action="remove-badge" data-bid="${b.id}">削除</button>
+          </div>
+        `).join("")}
+      </div>
+      <button class="btn small" style="margin-top:6px" data-action="add-badge">＋ 新しい称号を追加</button>
+    </div>`;
+}
+
+function renderSystemSetup(){
+  const el = document.getElementById("setup-system");
+  if(!el) return;
+  el.innerHTML = `
+    <div class="card">
+      <h2>👦 児童用タブレットと暗証番号</h2>
+      <p class="sub">児童のタブレットは、<b>このリンクを開くだけで</b>自動的に閲覧専用の画面になります。先生用画面に入るための暗証番号を設定できます。</p>
+      <div class="row" style="align-items:flex-end">
+        <div><label>教師モードに入る暗証番号</label><input id="teacher-pin" value="${escapeHtml(data.teacherPin)}" style="width:120px"></div>
+        <button class="btn ghost small" data-action="save-pin">暗証番号を保存</button>
+        <button class="btn small" style="margin-left:auto" data-action="switch-student-mode">👦 児童用の画面をプレビューする</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>💾 バックアップ・新学期リセット</h2>
+      <div class="sub">学期末の記録リセットや、JSONファイルへのバックアップ保存が行えます。</div>
+      <div class="row">
+        <button class="btn ghost small" data-action="export-backup">📥 JSONファイルに書き出す</button>
+        <label class="btn ghost small" style="cursor:pointer;margin:0">
+          📤 ファイルから読み込む
+          <input type="file" accept=".json" style="display:none" data-action="import-backup">
+        </label>
+        <button class="btn ghost small" style="border-color:var(--gold);color:#8a6d0b" data-action="reset-records-only">🔄 記録とポイントだけ0にする(新学期用)</button>
+        <button class="btn danger small" data-action="reset-all">⚠️ 全データを初期サンプルに戻す</button>
+      </div>
+    </div>`;
+}
+
+function saveUnit(){
+  const inp = document.getElementById("reward-unit");
+  if(!inp) return;
+  pushUndo("単位名の変更");
+  data.rewardUnit = inp.value.trim() || "ポイント";
+  save(); toast("単位名を保存しました", true); render();
+}
+function savePin(){
+  const inp = document.getElementById("teacher-pin");
+  if(!inp) return;
+  data.teacherPin = inp.value.trim() || "0000";
+  save(); toast("暗証番号を保存しました");
+}
+function updateQuestField(field, val){
+  if(!data.guildQuest) data.guildQuest = {title:"みんなで目指そう！", target:500, reward:"クラスお楽しみ会"};
+  if(field === "target") data.guildQuest.target = Math.max(10, Math.round(parseFloat(val)||500));
+  else if(field === "reward") data.guildQuest.reward = val.trim();
+  else data.guildQuest[field] = val.trim() || data.guildQuest[field];
+  save(); renderDashboard();
+}
+function toggleFeature(featKey, enabled){
+  if(!data.features) data.features = {quest:true, badges:true, mvp:true, ranking:true};
+  data.features[featKey] = Boolean(enabled);
+  save();
+  render();
+  toast(enabled ? "表示をONにしました" : "表示をOFFにしました");
+}
+function applyBulkThresholds(){
+  const mc = Math.max(1, Math.round(parseFloat(document.getElementById("bulk-mid-cnt").value)||5));
+  const me = Math.min(5, Math.max(1, parseFloat(document.getElementById("bulk-mid-eval").value)||3.5));
+  const hc = Math.max(1, Math.round(parseFloat(document.getElementById("bulk-high-cnt").value)||8));
+  const he = Math.min(5, Math.max(1, parseFloat(document.getElementById("bulk-high-eval").value)||4.2));
+  pushUndo("昇格条件の一括変更");
+  data.taskTypes.forEach(t=>{
+    if(t.ranks["中級"]){ t.ranks["中級"].needCount = mc; t.ranks["中級"].needEval = me; }
+    if(t.ranks["上級"]){ t.ranks["上級"].needCount = hc; t.ranks["上級"].needEval = he; }
+  });
+  save(); renderSettings();
+  toast("すべての掃除種類の昇格条件を一括更新しました", true);
+}
+function updateBadgeDef(bid, field, val){
+  const b = (data.badgeDefs||[]).find(x=>x.id===bid);
+  if(!b) return;
+  if(field === "enabled") b.enabled = Boolean(val);
+  else if(field === "target") b.target = parseFloat(val) || 0;
+  else b[field] = val;
+  save();
+}
+function addBadgeDef(){
+  if(!data.badgeDefs) data.badgeDefs = [];
+  pushUndo("称号の追加");
+  data.badgeDefs.push({id:uid("b_"), icon:"🌟", title:"新しい称号", desc:"条件を達成した証", type:"totalCount", target:20, enabled:true});
+  save(); renderBadgesSetup();
+  toast("新しい称号を追加しました", true);
+}
+function removeBadgeDef(bid){
+  pushUndo("称号の削除");
+  data.badgeDefs = (data.badgeDefs||[]).filter(x=>x.id!==bid);
+  save(); renderBadgesSetup();
+  toast("称号を削除しました", true);
+}
+function resetBadgesDefault(){
+  showConfirm("称号の設定を初期状態に戻しますか？", ()=>{
+    pushUndo("称号の初期化");
+    data.badgeDefs = defaultBadgeDefs();
+    data.autoMasterBadges = true;
+    save(); renderBadgesSetup();
+    toast("称号を初期状態に戻しました", true);
+  });
+}
+
+function updateMultiplier(tier, val){
+  const n = parseFloat(val);
+  data.evalMultipliers[tier] = isNaN(n) ? 1 : n;
+  save(); render();
+}
+function addTaskType(){
+  const inp = document.getElementById("new-task-name");
+  if(!inp) return;
+  const name = inp.value.trim();
+  if(!name){ toast("種類名を入力してください"); return; }
+  pushUndo(`${name}の追加`);
+  data.taskTypes.push({id:uid("t"), name, ranks:{
+    初級:{desc:"基本の作業を行う",reward:5,needCount:0,needEval:0},
+    中級:{desc:"少し難しい範囲まで行う",reward:8,needCount:5,needEval:3.5},
+    上級:{desc:"仕上げ・確認まで責任を持つ",reward:12,needCount:8,needEval:4.2}
+  }});
+  save(); inp.value=""; renderSettings();
+  toast(`「${name}」を追加しました`, true);
+}
+function renameTask(id, name){
+  const t = data.taskTypes.find(x=>x.id===id);
+  if(!t) return;
+  t.name = name.trim() || t.name;
+  save();
+}
+function updateRank(id, rank, field, val){
+  const t = data.taskTypes.find(x=>x.id===id);
+  if(!t || !t.ranks[rank]) return;
+  if(field==="desc") t.ranks[rank][field] = val;
+  else if(field==="reward" || field==="needCount") t.ranks[rank][field] = Math.max(0, Math.round(parseFloat(val)||0));
+  else t.ranks[rank][field] = parseFloat(val)||0;
+  save();
+}
+function removeTask(id){
+  const t = data.taskTypes.find(x=>x.id===id);
+  showConfirm(`「${t?t.name:"この掃除"}」を削除しますか？`, ()=>{
+    pushUndo(`${t?t.name:"掃除"}の削除`);
+    data.taskTypes = data.taskTypes.filter(x=>x.id!==id);
+    data.students.forEach(s=>{
+      if(s.assigned) delete s.assigned[id];
+      if(s.taskState) delete s.taskState[id];
+    });
+    save(); render();
+    toast("掃除の種類を削除しました", true);
+  });
+}
+
+let viewMode = (localStorage.getItem("soji-view-mode") === "teacher") ? "teacher" : "student";
+let studentModeSelectedId = localStorage.getItem("soji-selected-student") || null;
+
+function applyViewMode(){
+  document.documentElement.classList.toggle("student-mode", viewMode==="student");
+  updateUndoButton();
+}
+function switchToStudentModeManually(){
+  viewMode = "student";
+  localStorage.removeItem("soji-view-mode");
+  applyViewMode();
+  render();
+  window.scrollTo({top:0, behavior:"smooth"});
+  toast(`児童用プレビュー中です(戻る時は一番下の「先生はこちら」から暗証番号 ${data.teacherPin||'0000'})`);
+}
+function pickStudent(sid){
+  studentModeSelectedId = sid;
+  localStorage.setItem("soji-selected-student", sid);
+  renderStudentApp();
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+function unpickStudent(){
+  studentModeSelectedId = null;
+  localStorage.removeItem("soji-selected-student");
+  renderStudentApp();
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+function submitTeacherPin(){
+  const input = document.getElementById("pin-input");
+  if(!input) return;
+  if(input.value === (data.teacherPin || "0000")){
+    viewMode = "teacher";
+    localStorage.setItem("soji-view-mode", "teacher");
+    applyViewMode();
+    render();
+    toast("先生用画面に入りました");
+  } else {
+    toast("暗証番号が違います");
+  }
+}
+function teacherReturnLinkHtml(){
+  return `<div style="text-align:center;margin-top:26px">
+    <button class="btn ghost small" data-action="show-pin" style="opacity:0.75">🔑 先生はこちら (暗証番号)</button>
+    <div id="pin-box" style="display:none;margin-top:8px">
+      <input type="password" id="pin-input" inputmode="numeric" maxlength="8" style="width:110px;text-align:center;font-size:1rem;padding:6px" placeholder="暗証番号">
+      <button class="btn small" data-action="submit-pin">決定</button>
+    </div>
+  </div>`;
+}
+
+function renderStudentApp(){
+  const el = document.getElementById("student-app");
+  if(!el) return;
+  if(!data.students.length){
+    el.innerHTML = `<div class="card"><div class="empty">まだ生徒が登録されていません。先生に伝えてください。</div></div>${teacherReturnLinkHtml()}`;
+    return;
+  }
+  const s = studentModeSelectedId ? data.students.find(x=>x.id===studentModeSelectedId) : null;
+  const feat = data.features || {quest:true, badges:true, mvp:true, ranking:true};
+  if(!s){
+    const weekly = getWeeklyStats();
+    el.innerHTML = `
+      ${renderQuestBar()}
+      <div class="card">
+        <h2>🧹 掃除ギルド台帳</h2>
+        <p class="sub">自分の名前をタップしてください</p>
+        <div class="student-pick-grid">
+          ${data.students.map(st=>`<button class="btn ghost" data-action="pick-student" data-sid="${st.id}">${escapeHtml(st.name)}</button>`).join("")}
+        </div>
+      </div>
+      ${(feat.mvp !== false && (weekly.topStudents.length || weekly.topParties.length)) ? `
+      <div class="card">
+        <h2>🔥 直近${weekly.days}日間のギルドMVP</h2>
+        <div class="mvp-grid">
+          <div>
+            <div style="font-size:.78rem;font-weight:700;color:var(--primary);margin-bottom:4px">👤 個人トップ3</div>
+            ${weekly.topStudents.slice(0,3).map((x,i)=>`
+              <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:4px 0;border-bottom:1px dashed var(--line)">
+                <span>${i===0?'👑':(i+1)+'.'} <b>${escapeHtml(x.student.name)}</b> <small style="color:var(--ink-soft)">(${escapeHtml(x.student.party||'未所属')})</small></span>
+                <span style="color:var(--primary);font-weight:700">+${x.pts}</span>
+              </div>`).join("")}
+          </div>
+          ${weekly.topParties.length ? `<div>
+            <div style="font-size:.78rem;font-weight:700;color:var(--primary);margin-bottom:4px">🛡️ 班トップ3</div>
+            ${weekly.topParties.slice(0,3).map((x,i)=>`
+              <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:4px 0;border-bottom:1px dashed var(--line)">
+                <span>${i===0?'👑':(i+1)+'.'} <b>${escapeHtml(x.party)}</b></span>
+                <span style="color:var(--primary);font-weight:700">+${x.pts}</span>
+              </div>`).join("")}
+          </div>` : ''}
+        </div>
+      </div>` : ''}
+      ${teacherReturnLinkHtml()}`;
+    return;
+  }
+
+  const grid = data.taskTypes.map(t=>{
+    const st = studentTaskState(s, t.id);
+    const cur = t.ranks[st.rank] || t.ranks["初級"];
+    const nr = nextRank(st.rank);
+    const isAssigned = s.assigned && s.assigned[t.id];
+    let progressHtml;
+    if(nr){
+      const need = t.ranks[nr];
+      const pct = Math.min(100, Math.round(((st.count/Math.max(1,need.needCount))*50) + ((avgEval(st)/Math.max(0.1,need.needEval))*50)));
+      const remCount = Math.max(0, need.needCount - st.count);
+      progressHtml = `<div class="progress"><i style="width:${pct}%"></i></div>
+        <div style="font-size:.68rem;color:var(--ink-soft);margin-top:3px">次(${nr})まで: ${remCount>0 ? `あと${remCount}回` : '回数クリア!'} / 目標評価${need.needEval}</div>`;
+    } else {
+      progressHtml = `<div style="font-size:.7rem;color:var(--gold);font-weight:700;margin-top:3px">👑 さいこうランク!</div>`;
+    }
+    return `<div class="taskrank-cell" style="${isAssigned?'border-color:var(--primary);border-width:2px;':''}">
+      <div class="row" style="justify-content:space-between;margin-bottom:4px">
+        <div class="tname" style="margin:0">${escapeHtml(t.name)}</div>
+        ${isAssigned ? `<span class="chip ok" style="margin:0;font-size:.65rem;padding:1px 6px">担当中</span>` : ''}
+      </div>
+      <div class="row" style="gap:6px;margin-bottom:4px">
+        <span class="medal ${st.rank}">${RANK_LABEL[st.rank]}</span>
+        <span style="font-size:.78rem;font-weight:700">${st.rank}</span>
+        <span style="font-size:.7rem;color:var(--ink-soft)">(基本+${cur.reward})</span>
+      </div>
+      <div style="font-size:.72rem;color:var(--ink);background:var(--surface-2);padding:4px 6px;border-radius:4px;margin-bottom:4px">めあて: ${escapeHtml(cur.desc)}</div>
+      ${progressHtml}
+    </div>`;
+  }).join("");
+
+  const hist = [...data.records].filter(r=>r.studentId===s.id && !r.isAbsent).slice(-8).reverse().map(r=>{
+    if(r.isAdjustment){
+      return `<div class="hist-item">${r.date} — ボーナス/調整 ${r.reward>=0?'+':''}${r.reward}${escapeHtml(data.rewardUnit)}${r.note?' ('+escapeHtml(r.note)+')':''}</div>`;
+    }
+    const t = data.taskTypes.find(x=>x.id===r.taskTypeId);
+    return `<div class="hist-item">${r.date} — ${escapeHtml(t?t.name:"?")} +${r.reward}${escapeHtml(data.rewardUnit)}</div>`;
+  }).join("") || `<div class="empty">まだ記録がありません。</div>`;
+
+  el.innerHTML = `
+    <div style="margin-bottom:10px">
+      <button class="btn ghost small" data-action="unpick-student">⬅️ 名前えらびに戻る</button>
+    </div>
+    ${renderQuestBar()}
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <span style="font-size:.75rem;color:var(--ink-soft)">${escapeHtml(s.party||'未所属')}</span>
+          <h2 style="margin:0">${escapeHtml(s.name)} さん</h2>
+        </div>
+        <button class="btn ghost small" data-action="unpick-student">⬅️ 別の人が見る</button>
+      </div>
+      <p style="font-size:1.6rem;font-weight:900;color:var(--primary);margin:8px 0">累計 ${s.totalReward||0} ${escapeHtml(data.rewardUnit)}</p>
+      
+      ${feat.badges !== false ? `<h3 style="margin:12px 0 6px;font-size:.9rem">🏅 あなたの称号・実績バッジ</h3>${renderBadgesHtml(s, true)}` : ''}
+
+      <h3 style="margin:16px 0 6px;font-size:.9rem">🧹 掃除ごとのランクとめあて</h3>
+      <div class="taskrank-grid">${grid}</div>
+      
+      <div class="card" style="background: var(--surface-2); margin-top: 14px; padding: 12px; border: none;">
+        <h3 style="margin:0 0 6px; font-size: 0.85rem; color: var(--primary-dark);">💡 ポイントをたくさんもらうコツ</h3>
+        <ul style="margin:0; padding-left: 20px; font-size: 0.75rem; color: var(--ink-soft); line-height: 1.5;">
+          <li>それぞれの掃除の「めあて」を意識して丁寧に取り組む！</li>
+          <li>おしゃべりせずに集中する(私語なし)</li>
+          <li>時間内にしっかり終わらせる</li>
+          <li>道具の片付けまでキレイにする</li>
+        </ul>
+      </div>
+
+      <h3 style="margin:14px 0 4px;font-size:.9rem">さいきんの記録</h3>
+      ${hist}
+      <div style="margin-top:16px;text-align:center">
+        <button class="btn ghost" data-action="unpick-student">⬅️ 名前えらびに戻る</button>
+      </div>
+    </div>
+    ${teacherReturnLinkHtml()}`;
+}
+
+const EVAL_LABEL = {5:"とても丁寧",4:"丁寧",3:"ふつう",2:"やや雑",1:"雑"};
+let recordSession = {taskId:null, date:localTodayStr()};
+let rowExpandState = {};
+let customDraft = {};
+let adjustExpandState = {};
+let todaySummaryOpen = false;
+
+const PRESETS = {
+  great:{eval:5,silence:true,ontime:true,cleanup:true},
+  good:{eval:4,silence:true,ontime:true,cleanup:true}
+};
+
+function findTodayRecord(sid, tid, date){
+  for(let i=data.records.length-1;i>=0;i--){
+    const r = data.records[i];
+    if(!r.isAdjustment && r.studentId===sid && r.taskTypeId===tid && r.date===date) return r;
+  }
+  return null;
+}
+function promotionInfo(student, taskId){
+  const st = studentTaskState(student, taskId);
+  const nr = nextRank(st.rank);
+  if(!nr) return null;
+  const t = data.taskTypes.find(x=>x.id===taskId);
+  if(!t || !t.ranks[nr]) return null;
+  const need = t.ranks[nr];
+  return {nr, ready: st.count>=need.needCount && avgEval(st)>=need.needEval};
+}
+function multiplierForEval(evalScore){
+  const m = data.evalMultipliers || {great:1.2, good:1.0, needsWork:0.6};
+  if(evalScore>=5) return m.great;
+  if(evalScore>=4) return m.good;
+  return m.needsWork;
+}
+function rewardForRankAndEval(rk, evalScore){
+  return Math.max(0, Math.round(rk.reward * multiplierForEval(evalScore)));
+}
+
+function markAbsent(sid, tid){
+  const date = recordSession.date;
+  if(findTodayRecord(sid, tid, date)) return;
+  const s = data.students.find(x=>x.id===sid);
+  const t = data.taskTypes.find(x=>x.id===tid);
+  if(!s || !t) return;
+  pushUndo(`${s.name}のおやすみ登録`);
+  data.records.push({id:uid("r"), date, studentId:sid, taskTypeId:tid, isAbsent:true, reward:0});
+  save();
+  delete customDraft[sid+"_"+tid];
+  rowExpandState[sid+"_"+tid] = false;
+  renderRecord();
+  toast(`${s.name}さんを「おやすみ」にしました`, true);
+}
+
+function quickRecord(sid, tid, preset){
+  const date = recordSession.date;
+  if(findTodayRecord(sid, tid, date)) return;
+  const s = data.students.find(x=>x.id===sid);
+  const t = data.taskTypes.find(x=>x.id===tid);
+  if(!s || !t) return;
+  pushUndo(`${s.name}の記録`);
+  const st = ensureTaskState(s, tid);
+  const rk = t.ranks[st.rank] || t.ranks["初級"];
+  const reward = rewardForRankAndEval(rk, preset.eval);
+  st.count += 1; st.evalSum += preset.eval; st.evalCount += 1;
+  if(preset.silence) st.silentCount = (st.silentCount||0)+1;
+  s.totalReward = (s.totalReward||0) + reward;
+  data.records.push({id:uid("r"), date, studentId:sid, taskTypeId:tid, rank:st.rank,
+    eval:preset.eval, silence:preset.silence, ontime:preset.ontime, cleanup:preset.cleanup, reward});
+  save();
+  delete customDraft[sid+"_"+tid];
+  rowExpandState[sid+"_"+tid] = false;
+  renderRecord();
+  toast(`${s.name}さん +${reward}${data.rewardUnit}`, true);
+}
+
+function quickParty(tid, partyName, presetKey){
+  const preset = PRESETS[presetKey] || PRESETS.great;
+  const list = data.students.filter(s => (s.party || "未所属") === partyName && (s.assigned && s.assigned[tid]));
+  const date = recordSession.date;
+  const t = data.taskTypes.find(x=>x.id===tid);
+  if(!t) return;
+  const targets = list.filter(s => !findTodayRecord(s.id, tid, date));
+  if(!targets.length){
+    toast(`${partyName}はすでに全員記録済みです`);
+    return;
+  }
+  pushUndo(`${partyName}まとめて記録`);
+  targets.forEach(s => {
+    const st = ensureTaskState(s, tid);
+    const rk = t.ranks[st.rank] || t.ranks["初級"];
+    const reward = rewardForRankAndEval(rk, preset.eval);
+    st.count += 1; st.evalSum += preset.eval; st.evalCount += 1;
+    if(preset.silence) st.silentCount = (st.silentCount||0)+1;
+    s.totalReward = (s.totalReward||0) + reward;
+    data.records.push({id:uid("r"), date, studentId:s.id, taskTypeId:tid, rank:st.rank, eval:preset.eval, silence:preset.silence, ontime:preset.ontime, cleanup:preset.cleanup, reward});
+    delete customDraft[s.id+"_"+tid];
+    rowExpandState[s.id+"_"+tid] = false;
+  });
+  save();
+  renderRecord();
+  toast(`${partyName}の${targets.length}人をまとめて記録しました！`, true);
+  if(presetKey === "great") fireConfetti();
+}
+
+function quickAllUnrecorded(presetKey){
+  const preset = PRESETS[presetKey] || PRESETS.great;
+  const date = recordSession.date;
+  let count = 0;
+  const hasAssignment = data.taskTypes.some(t=> data.students.some(s=>s.assigned && s.assigned[t.id]));
+  pushUndo("未記録全員まとめて記録");
+  if(hasAssignment){
+    data.taskTypes.forEach(t=>{
+      const list = data.students.filter(s=>s.assigned && s.assigned[t.id]);
+      list.forEach(s=>{
+        if(!findTodayRecord(s.id, t.id, date)){
+          const st = ensureTaskState(s, t.id);
+          const rk = t.ranks[st.rank] || t.ranks["初級"];
+          const reward = rewardForRankAndEval(rk, preset.eval);
+          st.count += 1; st.evalSum += preset.eval; st.evalCount += 1;
+          if(preset.silence) st.silentCount = (st.silentCount||0)+1;
+          s.totalReward = (s.totalReward||0) + reward;
+          data.records.push({id:uid("r"), date, studentId:s.id, taskTypeId:t.id, rank:st.rank, eval:preset.eval, silence:preset.silence, ontime:preset.ontime, cleanup:preset.cleanup, reward});
+          count++;
+        }
+      });
+    });
+  } else {
+    const tid = recordSession.taskId || (data.taskTypes[0] && data.taskTypes[0].id);
+    const t = data.taskTypes.find(x=>x.id===tid);
+    if(t){
+      data.students.forEach(s=>{
+        if(!findTodayRecord(s.id, t.id, date)){
+          const st = ensureTaskState(s, t.id);
+          const rk = t.ranks[st.rank] || t.ranks["初級"];
+          const reward = rewardForRankAndEval(rk, preset.eval);
+          st.count += 1; st.evalSum += preset.eval; st.evalCount += 1;
+          if(preset.silence) st.silentCount = (st.silentCount||0)+1;
+          s.totalReward = (s.totalReward||0) + reward;
+          data.records.push({id:uid("r"), date, studentId:s.id, taskTypeId:t.id, rank:st.rank, eval:preset.eval, silence:preset.silence, ontime:preset.ontime, cleanup:preset.cleanup, reward});
+          count++;
+        }
+      });
+    }
+  }
+  if(!count){
+    undoStack.pop();
+    updateUndoButton();
+    toast("すでに全員分の記録が完了しています！");
+    return;
+  }
+  save();
+  renderRecord();
+  toast(`未記録の${count}件をまとめて記録しました！`, true);
+  if(presetKey === "great") fireConfetti();
+}
+
+function deleteRecordById(id){
+  const r = data.records.find(x=>x.id===id);
+  if(!r) return;
+  const s = data.students.find(x=>x.id===r.studentId);
+  pushUndo(`${s?s.name:"記録"}の取消`);
+  if(s && !r.isAbsent){
+    s.totalReward = (s.totalReward||0) - r.reward;
+    if(!r.isAdjustment && r.taskTypeId){
+      const st = ensureTaskState(s, r.taskTypeId);
+      st.count = Math.max(0, st.count-1);
+      st.evalSum = Math.max(0, st.evalSum - r.eval);
+      st.evalCount = Math.max(0, st.evalCount-1);
+      if(r.silence) st.silentCount = Math.max(0,(st.silentCount||0)-1);
+    }
+  }
+  data.records = data.records.filter(x=>x.id!==id);
+  save();
+  toast("記録を取り消しました", true);
+}
+
+function toggleRowExpand(sid, tid){
+  const key = sid+"_"+tid;
+  rowExpandState[key] = !rowExpandState[key];
+  if(!customDraft[key]) customDraft[key] = {eval:2,silence:true,ontime:true,cleanup:true};
+  renderRecord();
+}
+function setCustomEvalField(sid, tid, field, val){
+  const key = sid+"_"+tid;
+  if(!customDraft[key]) customDraft[key] = {eval:2,silence:true,ontime:true,cleanup:true};
+  customDraft[key][field] = val;
+}
+function submitCustom(sid, tid){
+  const key = sid+"_"+tid;
+  quickRecord(sid, tid, customDraft[key] || {eval:2,silence:true,ontime:true,cleanup:true});
+}
+function promoteFromRecord(sid, tid){ promote(sid, tid); renderRecord(); }
+function quickAdjust(sid, amount){
+  const s = data.students.find(x=>x.id===sid);
+  if(!s) return;
+  pushUndo(`${s.name}の±調整`);
+  s.totalReward = (s.totalReward||0) + amount;
+  data.records.push({id:uid("r"), date:recordSession.date, studentId:sid, isAdjustment:true, reward:amount, note:""});
+  save(); renderRecord();
+  toast(`${s.name}さん ${amount>0?'+':''}${amount}${data.rewardUnit}`, true);
+}
+function setRecordDate(val){ recordSession.date = val || localTodayStr(); renderRecord(); }
+function selectTaskFallback(val){ recordSession.taskId = val; renderRecord(); }
+
+function recordRowHtml(s, taskId, date){
+  const st = studentTaskState(s, taskId);
+  const t = data.taskTypes.find(x=>x.id===taskId);
+  const rk = t.ranks[st.rank] || t.ranks["初級"];
+  const promo = promotionInfo(s, taskId);
+  const existing = findTodayRecord(s.id, taskId, date);
+  const key = s.id+"_"+taskId;
+  const expanded = rowExpandState[key];
+  const adjustOpen = adjustExpandState[key];
+  const draft = customDraft[key] || {eval:2,silence:true,ontime:true,cleanup:true};
+  let actionHtml;
+  if(existing){
+    if(existing.isAbsent){
+      actionHtml = `<span class="chip">💤 おやすみ</span>
+        <button class="btn small ghost" data-action="delete-record" data-rid="${existing.id}">取消</button>`;
+    } else {
+      actionHtml = `<span class="chip ok">✓ 済 +${existing.reward}${escapeHtml(data.rewardUnit)}</span>
+        <button class="btn small ghost" data-action="delete-record" data-rid="${existing.id}">取消</button>`;
+    }
+  } else {
+    const pGreat = rewardForRankAndEval(rk, 5), pGood = rewardForRankAndEval(rk, 4), pNeeds = rewardForRankAndEval(rk, 2);
+    actionHtml = `
+      <button class="btn small gold" data-action="quick" data-sid="${s.id}" data-tid="${taskId}" data-preset="great">◎よくできた +${pGreat}</button>
+      <button class="btn small" data-action="quick" data-sid="${s.id}" data-tid="${taskId}" data-preset="good">○できた +${pGood}</button>
+      <button class="btn small ghost" data-action="detail" data-sid="${s.id}" data-tid="${taskId}">△もう少し(+${pNeeds}〜)</button>
+      <button class="btn small ghost" style="color:var(--ink-soft);border-color:var(--line);" data-action="absent" data-sid="${s.id}" data-tid="${taskId}" title="欠席・掃除免除">💤おやすみ</button>`;
+  }
+  return `<div class="rec-row">
+    <div class="row" style="flex:1;min-width:150px">
+      <span class="medal ${st.rank}" style="width:20px;height:20px;font-size:.58rem">${RANK_LABEL[st.rank]}</span>
+      <span style="font-weight:700">${escapeHtml(s.name)}</span>
+      ${promo && promo.ready ? `<span class="chip ok">⭐${promo.nr}へ</span><button class="btn small ghost" data-action="promote" data-sid="${s.id}" data-tid="${taskId}">昇格</button>` : ''}
+      <button class="btn small ghost" data-action="toggle-adjust" data-sid="${s.id}" data-tid="${taskId}" title="ポイントを直接調整">±調整</button>
+    </div>
+    <div class="row" style="gap:6px;flex-wrap:wrap">${actionHtml}</div>
+    ${(!existing && expanded) ? `<fieldset style="flex-basis:100%;margin:6px 0 0">
+      <legend>もう少しだった点(該当しないものだけ外してください)</legend>
+      <div class="row">
+        <select data-action="set-eval" data-sid="${s.id}" data-tid="${taskId}">
+          ${[3,2,1].map(v=>`<option value="${v}" ${draft.eval===v?'selected':''}>${v} - ${EVAL_LABEL[v]}</option>`).join("")}
+        </select>
+        <label class="check-row"><input type="checkbox" data-action="set-silence" data-sid="${s.id}" data-tid="${taskId}" ${draft.silence?'checked':''}>私語なし</label>
+        <label class="check-row"><input type="checkbox" data-action="set-ontime" data-sid="${s.id}" data-tid="${taskId}" ${draft.ontime?'checked':''}>時間内</label>
+        <label class="check-row"><input type="checkbox" data-action="set-cleanup" data-sid="${s.id}" data-tid="${taskId}" ${draft.cleanup?'checked':''}>片付け良好</label>
+        <button class="btn small" data-action="submit-custom" data-sid="${s.id}" data-tid="${taskId}">この内容で記録</button>
+      </div>
+    </fieldset>` : ''}
+    ${adjustOpen ? `<div class="row" style="flex-basis:100%;margin:6px 0 0;gap:6px;align-items:center">
+      <button class="btn small ghost" data-action="adjust" data-sid="${s.id}" data-amt="-5">-5</button>
+      <button class="btn small ghost" data-action="adjust" data-sid="${s.id}" data-amt="-1">-1</button>
+      <button class="btn small ghost" data-action="adjust" data-sid="${s.id}" data-amt="1">+1</button>
+      <button class="btn small ghost" data-action="adjust" data-sid="${s.id}" data-amt="5">+5</button>
+      <span style="font-size:.72rem;color:var(--ink-soft)">現在の累計: ${s.totalReward||0}${escapeHtml(data.rewardUnit)}</span>
+    </div>` : ''}
+  </div>`;
+}
+
+function todaySummaryHtml(date){
+  const todays = data.records.filter(r=>r.date===date).slice().reverse();
+  if(!todays.length) return `<div class="empty">この日の記録はまだありません。</div>`;
+  return todays.map(r=>{
+    const s = data.students.find(x=>x.id===r.studentId);
+    const t = r.taskTypeId ? data.taskTypes.find(x=>x.id===r.taskTypeId) : null;
+    if(r.isAbsent){
+      return `<div class="hist-item" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <span><b>${escapeHtml(s?s.name:"?")}</b> — ${escapeHtml(t?t.name:"?")} (💤 おやすみ)</span>
+        <button class="btn small ghost" data-action="delete-record" data-rid="${r.id}">取消</button>
+      </div>`;
+    }
+    const label = r.isAdjustment ? `🔧 ポイント調整${r.note?'('+escapeHtml(r.note)+')':''}` : escapeHtml(t?t.name:"?");
+    return `<div class="hist-item" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <span><b>${escapeHtml(s?s.name:"?")}</b> — ${label} ${r.reward>=0?'+':''}${r.reward}${escapeHtml(data.rewardUnit)}</span>
+      <button class="btn small ghost" data-action="delete-record" data-rid="${r.id}">取消</button>
+    </div>`;
+  }).join("");
+}
+
+function renderRecord(){
+  const el = document.getElementById("panel-record");
+  if(!el) return;
+  if(!data.students.length || !data.taskTypes.length){
+    el.innerHTML = `<div class="card"><div class="empty">先に「⚙ 年度設定」タブで生徒と掃除の種類を登録してください。</div></div>`;
+    return;
+  }
+  const date = recordSession.date;
+  const hasAssignment = data.taskTypes.some(t=> data.students.some(s=>s.assigned && s.assigned[t.id]));
+  let bodyHtml = "";
+
+  if(hasAssignment){
+    bodyHtml = data.taskTypes.map(t=>{
+      const list = data.students.filter(s=>s.assigned && s.assigned[t.id]);
+      if(!list.length) return "";
+      const byParty = {};
+      list.forEach(s => {
+        const p = s.party || "未所属";
+        if(!byParty[p]) byParty[p] = [];
+        byParty[p].push(s);
+      });
+      let partyHtml = "";
+      for(const p in byParty){
+        const members = byParty[p];
+        const allDone = members.every(s => findTodayRecord(s.id, t.id, date));
+        partyHtml += `
+          <div style="border: 1px solid var(--line); border-radius: 8px; padding: 10px; margin-bottom: 10px; background: var(--surface);">
+            <div class="row" style="justify-content: space-between; margin-bottom: 6px; border-bottom: 1px dashed var(--line); padding-bottom: 6px;">
+              <h3 style="margin:0; font-size: 0.9rem; color: var(--primary);">🚩 ${escapeHtml(p)}</h3>
+              ${(!allDone && p !== "未所属") ? `<div class="row" style="gap:6px">
+                <button class="btn gold small" data-action="quick-party" data-tid="${t.id}" data-party="${escapeHtml(p)}" data-preset="great">✨班まとめて◎</button>
+                <button class="btn small" data-action="quick-party" data-tid="${t.id}" data-party="${escapeHtml(p)}" data-preset="good">班まとめて○</button>
+              </div>` : ''}
+            </div>
+            ${members.map(s => recordRowHtml(s, t.id, date)).join("")}
+          </div>`;
+      }
+      return `<div class="card" style="background:var(--surface-2)">
+        <h2 style="font-size:1.02rem; margin-bottom: 8px;">🧹 ${escapeHtml(t.name)}</h2>
+        ${partyHtml}
+      </div>`;
+    }).join("");
+
+    const unassignedStudents = data.students.filter(s => !data.taskTypes.some(t => s.assigned && s.assigned[t.id]));
+    if(unassignedStudents.length > 0){
+      if(!recordSession.taskId || !data.taskTypes.find(x=>x.id===recordSession.taskId)) recordSession.taskId = data.taskTypes[0].id;
+      const fallbackTid = recordSession.taskId;
+      bodyHtml += `<div class="card" style="border-style:dashed">
+        <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+          <h2 style="font-size:.95rem;margin:0">⚠️ 担当が未設定の生徒 (${unassignedStudents.length}人)</h2>
+          <div class="row" style="gap:6px">
+            <label style="margin:0">記録する掃除:</label>
+            <select data-action="select-task-fallback" style="padding:4px 8px;font-size:.82rem">
+              ${data.taskTypes.map(t=>`<option value="${t.id}" ${t.id===fallbackTid?'selected':''}>${escapeHtml(t.name)}</option>`).join("")}
+            </select>
+          </div>
+        </div>
+        <p class="setup-hint" style="margin-bottom:8px">「⚙ 年度設定 ＞ 👥 名簿・担当」で担当場所にチェックを入れると、上の各掃除カードに自動で振り分けられます。</p>
+        <div>${unassignedStudents.map(s=>recordRowHtml(s, fallbackTid, date)).join("")}</div>
+      </div>`;
+    }
+  } else {
+    if(!recordSession.taskId || !data.taskTypes.find(x=>x.id===recordSession.taskId)) recordSession.taskId = data.taskTypes[0].id;
+    const taskId = recordSession.taskId;
+    bodyHtml = `<div class="card">
+      <div><label>掃除の種類</label><select data-action="select-task-fallback">
+        ${data.taskTypes.map(t=>`<option value="${t.id}" ${t.id===taskId?'selected':''}>${escapeHtml(t.name)}</option>`).join("")}
+      </select></div>
+      <p class="setup-hint">「⚙ 年度設定」の担当編成で担当を割り振ると、全種類が班ごとに一覧で並びます。</p>
+      <div style="margin-top:8px">${data.students.map(s=>recordRowHtml(s, taskId, date)).join("")}</div>
+    </div>`;
+  }
+
+  const todaysCount = data.records.filter(r=>r.date===date).length;
+  let totalExpected = 0, doneExpected = 0;
+  if(hasAssignment){
+    data.taskTypes.forEach(t=>{
+      data.students.filter(s=>s.assigned && s.assigned[t.id]).forEach(s=>{
+        totalExpected++;
+        if(findTodayRecord(s.id, t.id, date)) doneExpected++;
+      });
+    });
+  } else {
+    const tid = recordSession.taskId || (data.taskTypes[0] && data.taskTypes[0].id);
+    totalExpected = data.students.length;
+    data.students.forEach(s=>{ if(findTodayRecord(s.id, tid, date)) doneExpected++; });
+  }
+  const remainCount = Math.max(0, totalExpected - doneExpected);
+
+  el.innerHTML = `
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <div>
+          <h2 style="margin:0">今日の記録 <span class="chip ${remainCount===0?'ok':''}">${remainCount===0 ? '🎉 全員記録完了！' : `残り ${remainCount}件 / 全${totalExpected}件`}</span></h2>
+          <div class="sub" style="margin:2px 0 0">ボタンを押すだけで記録できます。間違えても右上の「↩️ 戻す」でいつでも取り消せます。</div>
+        </div>
+        <div class="row" style="gap:6px;align-items:flex-end">
+          ${remainCount > 0 ? `
+            <button class="btn gold small" data-action="quick-all" data-preset="great" title="まだ記録していない全員を◎で記録">⚡ 残り全員◎</button>
+            <button class="btn small" data-action="quick-all" data-preset="good" title="まだ記録していない全員を○で記録">残り全員○</button>
+          ` : ''}
+          <div><label>記録する日付</label><input type="date" value="${date}" data-action="set-date"></div>
+        </div>
+      </div>
+      <div class="row" style="justify-content:space-between;cursor:pointer;margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)" data-action="toggle-today-summary">
+        <h3 style="margin:0;font-size:.85rem">📝 この日の記録一覧 (${todaysCount}件・個別取消) ${todaySummaryOpen?'▲閉じる':'▼開く'}</h3>
+      </div>
+      ${todaySummaryOpen ? `<div id="today-summary" style="max-height:220px;overflow-y:auto;margin-top:6px">${todaySummaryHtml(date)}</div>` : ''}
+    </div>
+    ${bodyHtml}`;
+}
+
+function reportHandlerError(where, err){
+  console.error(where + " failed:", err);
+  const badge = document.getElementById("debug-badge");
+  if(badge){
+    badge.style.display = "block";
+    badge.textContent = `エラー(${where}): ${err && err.message ? err.message : err}`;
+  }
+  toast(`エラーが発生しました(${where})`);
+}
+
+document.addEventListener("click", function(e){
+  const btn = e.target.closest("[data-action]");
+  if(!btn) return;
+  const action = btn.dataset.action, sid = btn.dataset.sid, tid = btn.dataset.tid;
+  try{
+    if(action==="undo") performUndo();
+    else if(action==="quick") quickRecord(sid, tid, PRESETS[btn.dataset.preset]);
+    else if(action==="absent") markAbsent(sid, tid);
+    else if(action==="quick-party") quickParty(tid, btn.dataset.party, btn.dataset.preset);
+    else if(action==="quick-all") quickAllUnrecorded(btn.dataset.preset);
+    else if(action==="detail") toggleRowExpand(sid, tid);
+    else if(action==="submit-custom") submitCustom(sid, tid);
+    else if(action==="delete-record"){ deleteRecordById(btn.dataset.rid); renderRecord(); }
+    else if(action==="promote") promoteFromRecord(sid, tid);
+    else if(action==="toggle-adjust"){ const k = sid+"_"+tid; adjustExpandState[k] = !adjustExpandState[k]; renderRecord(); }
+    else if(action==="adjust") quickAdjust(sid, parseFloat(btn.dataset.amt));
+    else if(action==="add-student") addStudent();
+    else if(action==="bulk-add") bulkAddStudents(false);
+    else if(action==="bulk-replace") bulkAddStudents(true);
+    else if(action==="clear-all-students") clearAllStudents();
+    else if(action==="remove-student") removeStudent(sid);
+    else if(action==="open-student-detail-setup"){ openStudentId = (openStudentId===sid ? null : sid); renderStudents(); }
+    else if(action==="toggle-overview-student"){ openStudentId = (openStudentId===sid ? null : sid); renderOverview(); }
+    else if(action==="close-student-detail"){ openStudentId = null; render(); }
+    else if(action==="apply-adjustment") applyAdjustment(sid);
+    else if(action==="save-unit") saveUnit();
+    else if(action==="export-backup") exportBackup();
+    else if(action==="add-task") addTaskType();
+    else if(action==="reset-all") resetAll();
+    else if(action==="reset-records-only") resetRecordsOnly();
+    else if(action==="remove-task") removeTask(tid);
+    else if(action==="rotate-assign") rotateAssignments(parseInt(btn.dataset.dir, 10));
+    else if(action==="assign-by-party") assignByPartyOrder();
+    else if(action==="apply-bulk-thresholds") applyBulkThresholds();
+    else if(action==="add-badge") addBadgeDef();
+    else if(action==="remove-badge") removeBadgeDef(btn.dataset.bid);
+    else if(action==="reset-badges-default") resetBadgesDefault();
+    else if(action==="setup-subtab") showSetupSubtab(btn.dataset.sub);
+    else if(action==="confirm-ok"){ const cb = pendingConfirmCallback; hideConfirm(); if(cb) cb(); }
+    else if(action==="confirm-cancel") hideConfirm();
+    else if(action==="toggle-today-summary"){ todaySummaryOpen = !todaySummaryOpen; renderRecord(); }
+    else if(action==="save-pin") savePin();
+    else if(action==="switch-student-mode") switchToStudentModeManually();
+    else if(action==="pick-student") pickStudent(sid);
+    else if(action==="unpick-student") unpickStudent();
+    else if(action==="show-pin"){
+      const box = document.getElementById("pin-box");
+      if(box){
+        box.style.display = "block";
+        const inp = document.getElementById("pin-input");
+        if(inp) inp.focus();
+      }
+    }
+    else if(action==="submit-pin") submitTeacherPin();
+  }catch(err){ reportHandlerError("click:"+action, err); }
+});
+
+document.addEventListener("change", function(e){
+  const el = e.target.closest("[data-action]");
+  if(!el) return;
+  const action = el.dataset.action, sid = el.dataset.sid, tid = el.dataset.tid;
+  try{
+    if(action==="set-eval") setCustomEvalField(sid, tid, "eval", parseInt(el.value,10));
+    else if(action==="set-silence") setCustomEvalField(sid, tid, "silence", el.checked);
+    else if(action==="set-ontime") setCustomEvalField(sid, tid, "ontime", el.checked);
+    else if(action==="set-cleanup") setCustomEvalField(sid, tid, "cleanup", el.checked);
+    else if(action==="set-rank") setStudentRank(sid, tid, el.value);
+    else if(action==="rename-student"){
+      const s = data.students.find(x=>x.id===sid);
+      if(s && el.value.trim()){
+        pushUndo("名前の変更");
+        s.name = el.value.trim();
+        save(); render();
+        toast("名前を更新しました", true);
+      }
+    }
+    else if(action==="update-party"){
+      const s = data.students.find(x=>x.id===sid);
+      if(s){
+        pushUndo("班の変更");
+        s.party = el.value.trim() || "未所属";
+        save(); render();
+        toast(`${s.name}さんの班を「${s.party}」に保存しました`, true);
+      }
+    }
+    else if(action==="rename-task") renameTask(tid, el.value);
+    else if(action==="update-rank") updateRank(tid, el.dataset.rank, el.dataset.field, el.value);
+    else if(action==="toggle-assign") toggleAssign(sid, tid, el.checked);
+    else if(action==="import-backup") importBackupFile(el.files[0]);
+    else if(action==="select-task-fallback") selectTaskFallback(el.value);
+    else if(action==="set-date") setRecordDate(el.value);
+    else if(action==="update-mult") updateMultiplier(el.dataset.tier, el.value);
+    else if(action==="update-quest") updateQuestField(el.dataset.field, el.value);
+    else if(action==="update-mvp-days"){
+      data.mvpDays = Math.max(1, Math.round(parseFloat(el.value)||7));
+      save(); renderDashboard();
+      toast(`週間MVPの集計期間を${data.mvpDays}日間に設定しました`);
+    }
+    else if(action==="toggle-auto-master"){
+      data.autoMasterBadges = el.checked;
+      save(); toast("設定を保存しました");
+    }
+    else if(action==="toggle-feature"){
+      toggleFeature(el.dataset.feat, el.checked);
+    }
+    else if(action==="update-badge"){
+      const field = el.dataset.field;
+      const val = (el.type === "checkbox") ? el.checked : el.value;
+      updateBadgeDef(el.dataset.bid, field, val);
+    }
+  }catch(err){ reportHandlerError("change:"+action, err); }
+});
+
+document.addEventListener("keydown", function(e){
+  if(e.key !== "Enter") return;
+  const t = e.target;
+  if(!t) return;
+  if(t.id === "pin-input"){ e.preventDefault(); submitTeacherPin(); }
+  else if(t.id === "new-student-name" || t.id === "new-student-party"){ e.preventDefault(); addStudent(); }
+  else if(t.id === "new-task-name"){ e.preventDefault(); addTaskType(); }
+});
+
+function render(){
+  updateUndoButton();
+  if(viewMode === "student"){
+    try{ renderStudentApp(); }
+    catch(e){
+      console.error("renderStudentApp failed:", e);
+      const el = document.getElementById("student-app");
+      if(el) el.innerHTML = `<div class="card"><b style="color:var(--danger)">⚠️ 表示エラー</b><div>${escapeHtml(String(e))}</div></div>`;
+    }
+    return;
+  }
+  const jobs = [
+    ["panel-dashboard", renderDashboard],
+    ["panel-overview", renderOverview],
+    ["setup-students", renderStudents],
+    ["setup-assign", renderAssignments],
+    ["setup-tasks", renderSettings],
+    ["setup-badges", renderBadgesSetup],
+    ["setup-system", renderSystemSetup],
+    ["panel-record", renderRecord]
+  ];
+  jobs.forEach(([elId, fn])=>{
+    try{ fn(); }
+    catch(e){
+      console.error(elId + " render failed:", e);
+      const el = document.getElementById(elId);
+      if(el) el.innerHTML = `<div class="card"><b style="color:var(--danger)">⚠️ 表示エラー (${elId})</b><div>${escapeHtml(String(e))}</div></div>`;
+    }
+  });
+  showSetupSubtab(activeSetupSubtab);
+}
+
+applyViewMode();
+let restoredTab = "record";
+try{ restoredTab = sessionStorage.getItem("soji-active-tab") || "record"; }catch(e){}
+if(!TABS.some(t=>t.id===restoredTab)) restoredTab = "record";
+showTab(restoredTab);
+initArtifactSync();
+</script>
+</body>
+</html>
